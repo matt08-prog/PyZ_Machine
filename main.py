@@ -6,7 +6,8 @@ from file_exporter import FileExporter
 from abreviator import Abreviator
 from header import Header
 from routine import Routine
-from operand import Operand
+from instruction import Instruction
+from interpreter import Interpreter
 
 def main():
     if len(sys.argv) != 2:
@@ -25,6 +26,7 @@ def main():
     exporter = FileExporter(output_file)
     header = Header(hex_data, extractor)
     abreviator = Abreviator(hex_data, extractor, header)
+    interpreter = Interpreter(extractor, header)
 
 
     # Export hex data to file
@@ -34,8 +36,9 @@ def main():
     # Display header data
     header.output_header_info()
 
-    # get first routine
-    routine = Routine(extractor, header.initial_execution_point - 1)
+
+    # Tell Interpreter to get first routine
+    interpreter.start_interpreting()
 
 
 if __name__ == "__main__":
