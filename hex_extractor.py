@@ -24,6 +24,9 @@ class HexExtractor:
     def read_word(self, address):
         return (int(self.hex_data[address][1], base =16) << 8) | (int(self.hex_data[address+1][1], base=16))
 
+    def read_byte(self, address):
+        return int(self.hex_data[address][1], base=16)
+
     def read_string(self, base_address):
         current_address = base_address
         current_alphabet = 0 # A0 = lowercase, A1 = Uppercase, A2 = punctuation

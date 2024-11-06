@@ -16,3 +16,5 @@ class Header:
         print(f"start of global variables: {self.start_of_global_variables:04x}")
         print(f"0x0e - static memory base: {self.hex_data[0X0e]}")
         print(f"0x18 - abbreviations table address: {self.start_of_abreviations_address_table}")
+        print(f"0x50d4 - num local vars of first routine: {self.hex_data[0X50d4]}")
+    

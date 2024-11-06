@@ -5,6 +5,8 @@ from hex_extractor import HexExtractor
 from file_exporter import FileExporter
 from abreviator import Abreviator
 from header import Header
+from routine import Routine
+from operand import Operand
 
 def main():
     if len(sys.argv) != 2:
@@ -31,6 +33,10 @@ def main():
 
     # Display header data
     header.output_header_info()
+
+    # get first routine
+    routine = Routine(extractor, header.initial_execution_point - 1)
+
 
 if __name__ == "__main__":
     main()
