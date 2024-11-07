@@ -2,16 +2,20 @@
 from hex_extractor import HexExtractor
 
 class Instruction:
-    def __init__(self, extractor, address):
+    def __init__(self, extractor, address, interpreter, current_routine):
         self.extractor = extractor
         self.starting_address = address
+        self.interpreter = interpreter
+        self.current_routine = current_routine
         # for short, always 1OP unless code = 1
         self.num_ops_dict = {0: 2, 1: 1, 2: 1, 3: 0}  # large, small, Variable, (Omitted)
+        # large (2), small (1), 
         self.num_ops = 0 # -1 = var
         self.operand_types = []
         self.opcode = 0
         self.instruction_form = 1
         self.full_opcode = 0x00
+        self.long_instruction_form_ope_type_dict = {0: 1, 1: -1}
         self.operands = []
         self.storage_target_address = self.starting_address # set after loading the last operand
         self.branch_target_address_target_address = self.starting_address # set after loading the last operand
@@ -51,13 +55,23 @@ class Instruction:
             self.instruction_form = 1 # Long
             op_value = (full_opcode & 0b00110000) >> 4
             self.num_ops = 2
-            self.operand_types = [int(full_opcode & 0b01000000 != 0) + 1, int(full_opcode & 0b00100000 != 0) + 1]
+            self.operand_types = [
+                self.long_instruction_form_ope_type_dict[(full_opcode & 0b01000000) >> 6], 
+                self.long_instruction_form_ope_type_dict[(full_opcode & 0b00100000) >> 5]]
             self.opcode = full_opcode & 0b00011111
 
         self.full_opcode = full_opcode
 
         self.load_operands(initial_operands_offset)
     
+    def load_variable(self, load_target):
+        if (load_target == 0x00):
+            return self.interpreter.stack[-1]
+        elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
+            return self.current_routine.local_vars[load_target - 1]
+        elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
+            return self.interpreter.global_vars[load_target - 0x10]
+
     def load_operands(self, initial_operand_offset):
         operand_offset = initial_operand_offset
         for operand_type in self.operand_types:
@@ -65,10 +79,10 @@ class Instruction:
                 self.operands.append(self.extractor.read_word(operand_offset))
                 operand_offset += 2
             elif (operand_type == 1): # small operand (1 byte)
-                self.operands.append(self.extractor.read_word(operand_offset))
+                self.operands.append(self.extractor.read_byte(operand_offset))
                 operand_offset += 1
             elif (operand_type == -1): # variable operand (1 byte)
-                # implement loading a variable type operand
+                self.operands.append(self.load_variable(self.extractor.read_byte(operand_offset)))
                 operand_offset += 1
         self.storage_target_address = operand_offset
         self.branch_target_address = operand_offset + 1

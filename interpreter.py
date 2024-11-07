@@ -18,7 +18,7 @@ class Interpreter:
     def __init__(self, extractor, header):
         self.extractor = extractor
         self.header = header
-        self.opcode_table = {0xe0: self.op_code__call}
+        self.opcode_table = {0xe0: self.op_code__call, 0x54: self.op_code__add, 0x74: self.op_code__add}
         self.stack = []
         self.global_vars = [0x00] * 240
 
@@ -29,14 +29,14 @@ class Interpreter:
 
     def start_interpreting(self):
         starting_routine_address_from_header = self.header.initial_execution_point - 1
-        starting_routine = Routine(self.extractor, starting_routine_address_from_header, [])
+        starting_routine = Routine(self.extractor, starting_routine_address_from_header, [], self)
         print(f"first routine's address: {starting_routine_address_from_header}")
         print(f"routine's local vars: {starting_routine.local_vars}")
         self.run_routine(starting_routine)
     
     def run_routine(self, routine):
         return_value = 0
-        while self.debug_instruction_index < 3:
+        while self.debug_instruction_index < 4:
             self.debug_instruction_index += 1
             next_instruction = routine.read_next_instruction()
             print(f"\troutine's first instruction's address: {routine.next_instruction_offset:02x}")
@@ -61,13 +61,23 @@ class Interpreter:
         elif (storage_target > 0x0f and storage_target < 0x100): # 0x10 to 0xff are meant for global_vars
             self.global_vars[storage_target - 0x10] = result_to_store
 
-
     def op_code__call(self, instruction, associated_routine):
         routine_to_call = instruction.operands[0] * 2
         print(f"\t\t__call instruction calls routine ({routine_to_call:05x})")
         operands_to_pass_on = instruction.operands[1:-1]
-        # [instruction.operands[1], instruction.operands[2]]
         result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
-        called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on)
+        called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on, self)
+
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
 
         self.store_result(self.run_routine(called_routine), result_storage_target, associated_routine)
+
+    def op_code__add(self, instruction, associated_routine):
+        result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        print(f"\t\t__add instruction puts ({instruction.operands[0]:04x} + {instruction.operands[1]:04x}) into {result_storage_target:04x}")
+        
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        self.store_result(instruction.operands[0] + instruction.operands[1], result_storage_target, associated_routine)
