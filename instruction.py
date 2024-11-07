@@ -13,6 +13,8 @@ class Instruction:
         self.instruction_form = 1
         self.full_opcode = 0x00
         self.operands = []
+        self.storage_target_address = self.starting_address # set after loading the last operand
+        self.branch_target_address_target_address = self.starting_address # set after loading the last operand
         self.parse_instruction()
 
     def parse_instruction(self):
@@ -68,3 +70,5 @@ class Instruction:
             elif (operand_type == -1): # variable operand (1 byte)
                 # implement loading a variable type operand
                 operand_offset += 1
+        self.storage_target_address = operand_offset
+        self.branch_target_address = operand_offset + 1

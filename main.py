@@ -11,7 +11,7 @@ from interpreter import Interpreter
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python main.py <input_file>")
+        print("Usage: python main.py |flags| <input_file>")
         sys.exit(1)
 
     input_file = sys.argv[1]
