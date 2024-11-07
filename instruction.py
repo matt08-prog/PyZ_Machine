@@ -51,7 +51,7 @@ class Instruction:
             self.instruction_form = 1 # Long
             op_value = (full_opcode & 0b00110000) >> 4
             self.num_ops = 2
-            self.operand_types = [full_opcode & 0b01000000 == 0, full_opcode & 0b00100000 == 0]
+            self.operand_types = [int(full_opcode & 0b01000000 != 0) + 1, int(full_opcode & 0b00100000 != 0) + 1]
             self.opcode = full_opcode & 0b00011111
 
         self.full_opcode = full_opcode

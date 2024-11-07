@@ -21,8 +21,10 @@ class Interpreter:
         self.opcode_table = {0xe0: self.op_code__call}
         self.stack = []
         self.global_vars = [0x00] * 240
+
         self.debug_instruction_index = 0
-        print(f"{bcolors.WARNING}Original contents of global vars: {self.global_vars}{bcolors.ENDC}")
+        self.debug_instruction_from_dict = {0: "short", 1: "long", 2: "variable"}
+        # print(f"{bcolors.WARNING}Original contents of global vars: {self.global_vars}{bcolors.ENDC}")
 
 
     def start_interpreting(self):
@@ -34,13 +36,12 @@ class Interpreter:
     
     def run_routine(self, routine):
         return_value = 0
-        while self.debug_instruction_index < 2:
+        while self.debug_instruction_index < 3:
             self.debug_instruction_index += 1
             next_instruction = routine.read_next_instruction()
             print(f"\troutine's first instruction's address: {routine.next_instruction_offset:02x}")
             print(f"\tnumber of local vars: {routine.num_local_vars}")
-            print(f"\tnumber of local vars: {len(routine.local_vars)}")
-            print(f"\toperand_type: {next_instruction.instruction_form}")
+            print(f"\tinstruction_form: {self.debug_instruction_from_dict[next_instruction.instruction_form]}")
             print(f"\tnum_ops: {next_instruction.num_ops}")
             print(f"\topcode: {next_instruction.opcode}")
             print(f"\toperand_types: {next_instruction.operand_types}")
