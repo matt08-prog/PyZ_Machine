@@ -9,7 +9,8 @@ class Instruction:
         self.current_routine = current_routine
         # for short, always 1OP unless code = 1
         self.num_ops_dict = {0: 2, 1: 1, 2: 1, 3: 0}  # large, small, Variable, (Omitted)
-        # large (2), small (1), 
+        self.variable_form_op_types = {0: 2, 1: 1, 2: -1}  # large, small, Variable, (Omitted)
+        # large (2), small (1), var (-1)
         self.num_ops = 0 # -1 = var
         self.operand_types = []
         self.opcode = 0
@@ -41,10 +42,11 @@ class Instruction:
 
             for op_type_index in range(0,8, 2):
                 op_type = (operand_type_byte & (0b11000000 >> op_type_index)) >> 6 - op_type_index
+
                 if (op_type == 3):
                     break
                 else:
-                    self.operand_types.append(self.num_ops_dict[op_type])
+                    self.operand_types.append(self.variable_form_op_types[op_type])
                     self.num_ops += 1
         
         elif (full_opcode & 0b11000000 == 128):
