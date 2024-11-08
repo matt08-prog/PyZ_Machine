@@ -18,7 +18,10 @@ class Instruction:
         self.long_instruction_form_ope_type_dict = {0: 1, 1: -1}
         self.operands = []
         self.storage_target_address = self.starting_address # set after loading the last operand
-        self.branch_target_address_target_address = self.starting_address # set after loading the last operand
+        self.branch_target_address = self.starting_address # set after loading the last operand
+        self.storage_target = 0 # set after loading the last operand
+        self.branch_target = 0 # set after loading the last operand
+        
         self.parse_instruction()
 
     def parse_instruction(self):
@@ -86,3 +89,5 @@ class Instruction:
                 operand_offset += 1
         self.storage_target_address = operand_offset
         self.branch_target_address = operand_offset + 1
+        self.storage_target = self.extractor.read_byte(self.storage_target_address)
+        self.branch_target = self.extractor.read_byte(self.branch_target_address)

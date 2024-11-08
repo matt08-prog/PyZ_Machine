@@ -12,7 +12,8 @@ class Routine:
         self.local_vars = self.read_routine_header()
         self.load_in_passed_arguments(passed_arguments)
         self.next_instruction_offset = initial_address + 1 + (len(self.local_vars) * 2)
-        self.has_returned = False
+        self.should_return = False
+        self.return_value = False
 
     def read_routine_header(self):
         self.num_local_vars = self.extractor.read_byte(self.initial_address)
@@ -26,8 +27,6 @@ class Routine:
             self.local_vars[arg_index] = passed_arguments[arg_index]
     
     def read_next_instruction(self):
-        #debug
-        self.has_returned = True
         next_instruction = Instruction(self.extractor, self.next_instruction_offset, self.interpreter, self)
         return next_instruction
 
