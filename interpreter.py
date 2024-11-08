@@ -30,10 +30,14 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 class Interpreter:
-    def __init__(self, extractor, header):
+    def __init__(self, extractor, header, max_time_step):
         self.extractor = extractor
         self.header = header
+        self.max_time_step = max_time_step
+
+        self.time_stamp = 0
 
         # this opcode table should actually call functions from a seperate op_code interpreter class
         self.opcode_table = {
@@ -66,12 +70,15 @@ class Interpreter:
         self.run_routine(starting_routine) # This starting routine should never return a value
     
     def run_routine(self, routine):
+        # print(f"number of local vars: {routine.num_local_vars}")
         print(f"routine's local vars: {list(map(hex, routine.local_vars))}")
-        while self.debug_instruction_index < 5:
-            self.debug_instruction_index += 1
+        while True:
+            self.time_stamp += 1
+            if self.time_stamp >= self.max_time_step:
+                # debug exit, otherwise it tries to return from all routines at end of simulation
+                exit(-1)
             next_instruction = routine.read_next_instruction()
-            print(f"\troutine's next instruction address: {routine.next_instruction_offset:02x}")
-            print(f"\tnumber of local vars: {routine.num_local_vars}")
+            print(f"time-{self.time_stamp} routine's next instruction address: {routine.next_instruction_offset:02x}")
             print(f"\tinstruction_form: {self.debug_instruction_form_dict[next_instruction.instruction_form]}")
             # print(f"\tnum_ops: {next_instruction.num_ops}")
             # print(f"\topcode: {next_instruction.opcode}")
@@ -79,7 +86,8 @@ class Interpreter:
             for operand_index in range(len(next_instruction.operand_types)):
                 end_string = ", " if operand_index != len(next_instruction.operand_types) - 1 else "]\n" 
                 print(f"{self.operand_types_dict[next_instruction.operand_types[operand_index]]}" , end=end_string)
-            print(f"\toperands: {list(map(hex, next_instruction.operands))}")
+            print(f"\toriginal operands: {next_instruction.debug_operands}")
+            print(f"\t         operands: {list(map(hex, next_instruction.operands))}")
             # print(f"\taddress_of_store_target (if it exists): {next_instruction.storage_target_address:02x}")
             # print(f"\taddress_of_branch_target (if it exists): {next_instruction.branch_target_address:02x}")
             self.interpret_instruction(next_instruction, routine)
@@ -88,6 +96,7 @@ class Interpreter:
                     break
                 else:
                     raise Exception("routine returned a non True/False value")
+        
         return routine.return_value # Routine returned with a true of a false
 
     def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
@@ -180,3 +189,5 @@ class Interpreter:
         # operand 0 is the start of array and operand 1 is the index of the array
         result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
         self.store_result(result_to_store, instruction.storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1

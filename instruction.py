@@ -17,6 +17,7 @@ class Instruction:
         self.instruction_form = 1
         self.full_opcode = 0x00
         self.long_instruction_form_ope_type_dict = {0: 1, 1: -1}
+        self.debug_operands = []
         self.operands = []
         self.storage_target_address = self.starting_address # set after loading the last operand
         self.branch_target_address = self.starting_address # set after loading the last operand
@@ -81,12 +82,15 @@ class Instruction:
         operand_offset = initial_operand_offset
         for operand_type in self.operand_types:
             if (operand_type == 2): # large operand (2 bytes)
+                self.debug_operands.append("same")
                 self.operands.append(self.extractor.read_word(operand_offset))
                 operand_offset += 2
             elif (operand_type == 1): # small operand (1 byte)
                 self.operands.append(self.extractor.read_byte(operand_offset))
+                self.debug_operands.append("same")
                 operand_offset += 1
             elif (operand_type == -1): # variable operand (1 byte)
+                self.debug_operands.append(hex(self.extractor.read_byte(operand_offset)))
                 self.operands.append(self.load_variable(self.extractor.read_byte(operand_offset)))
                 operand_offset += 1
         self.storage_target_address = operand_offset

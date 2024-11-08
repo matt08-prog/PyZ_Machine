@@ -11,17 +11,25 @@ from interpreter import Interpreter
 import argparse
 
 def main():
+    max_time_step = 0
+
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
     parser.add_argument("-a", "--abbreviations", action="store_true", help="Output abbreviations table")
     parser.add_argument("-x", "--hexdump", action="store_true", help="Write hexdump of input to a file")
+    parser.add_argument("-mts", "--should_look_for_max_time_step", action="store_true", help="Write hexdump of input to a file")
     parser.add_argument("input_file", help="Input file to process")
+    parser.add_argument("max_time_step", help="maximum number of instructions to process")
 
     args = parser.parse_args()
 
     should_output_abbreviations_table = args.abbreviations
     should_dump_input_file = args.hexdump
     input_file = args.input_file
+    if args.should_look_for_max_time_step:
+        max_time_step = int(args.max_time_step)
+    else:
+        max_time_step = 0
     output_file = f"{input_file}_hex_dump.txt"
 
 
@@ -35,7 +43,7 @@ def main():
     exporter = FileExporter(output_file)
     header = Header(hex_data, extractor)
     abreviator = Abreviator(hex_data, extractor, header)
-    interpreter = Interpreter(extractor, header)
+    interpreter = Interpreter(extractor, header, max_time_step)
 
 
     # Export hex data to file
