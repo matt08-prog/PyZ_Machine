@@ -1,6 +1,18 @@
 # instruction.py
 from hex_extractor import HexExtractor
 
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class Instruction:
     def __init__(self, extractor, address, routine_interpreter, current_routine):
         self.extractor = extractor
@@ -72,10 +84,13 @@ class Instruction:
     
     def load_variable(self, load_target):
         if (load_target == 0x00):
+            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.stack[-1]:02x}) from top of stack{bcolors.ENDC}")
             return self.routine_interpreter.stack[-1]
         elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
+            print(f"\t\t{bcolors.FAIL}load ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x}){bcolors.ENDC}")
             return self.current_routine.local_vars[load_target - 1]
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
+            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x}){bcolors.ENDC}")
             return self.routine_interpreter.global_vars[load_target - 0x10]
 
     def load_operands(self, initial_operand_offset):

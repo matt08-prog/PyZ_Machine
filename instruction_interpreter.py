@@ -23,6 +23,7 @@ def binary_to_signed_int(binary_value): # should be moved to global variable fil
     
     # If the leftmost bit is 1, it's a negative number in two's complement
     if num & (1 << (num_bits - 1)):
+        # The only time we should ever get here is if this is the first time the interpreter is looking at this value
         num -= 1 << num_bits
     
     return num
@@ -56,7 +57,9 @@ class InstructionInterpreter:
             0x54: self.op_code__add, 
             0x74: self.op_code__add,
 
-            0x50: self.op_cod__sub,
+            0x55: self.op_cod__sub,
+
+            0xa0: self.op_code__jump_if_zero,
 
             0x61: self.op_code__jump_if_equal,
 
@@ -118,7 +121,7 @@ class InstructionInterpreter:
 
         minuend = binary_to_signed_int(instruction.operands[0])
         subtrahend = binary_to_signed_int(instruction.operands[1])
-        difference = minuend + subtrahend
+        difference = minuend - subtrahend
         # difference = signed_int_to_unsigned_int(difference)
 
         self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
@@ -126,6 +129,9 @@ class InstructionInterpreter:
 
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
+        if len(instruction.operands) > 2 or len(instruction.operands) < 2:
+            print(f"{bcolors.FAIL}op_code__jump_if_equal expected 2 operands but got {len(instruction.operands)}{bcolors.ENDC}")
+            exit(-1)
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
         invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
         address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
@@ -135,6 +141,54 @@ class InstructionInterpreter:
         will_branch = False
 
         test_condition = (instruction.operands[0] == instruction.operands[1])
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns True{bcolors.ENDC}")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns false{bcolors.ENDC}")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            # update address of next instruction
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            print(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            print(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        print(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        print(f"\t\ttest condition passed: {test_condition}")
+        print(f"\t\tbranch offset: {branch_offset}")
+        print(f"\t\tWill branch: {will_branch}")
+        print(f"\t\tWill return: {will_return}")
+
+    def op_code__jump_if_zero(self, instruction, associated_routine):
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+
+        test_condition = (instruction.operands[0] == 0)
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
             if branch_info_num_bytes == 1:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
