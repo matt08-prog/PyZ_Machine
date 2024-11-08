@@ -4,10 +4,10 @@ from instruction import Instruction
 # from interpreter import Interpreter
 
 class Routine:
-    def __init__(self, extractor, initial_address, passed_arguments, interpreter):
+    def __init__(self, extractor, initial_address, passed_arguments, routine_interpreter):
         self.extractor = extractor
         self.initial_address = initial_address
-        self.interpreter = interpreter
+        self.routine_interpreter = routine_interpreter
         self.num_local_vars = 0
         self.local_vars = self.read_routine_header()
         self.load_in_passed_arguments(passed_arguments)
@@ -27,6 +27,6 @@ class Routine:
             self.local_vars[arg_index] = passed_arguments[arg_index]
     
     def read_next_instruction(self):
-        next_instruction = Instruction(self.extractor, self.next_instruction_offset, self.interpreter, self)
+        next_instruction = Instruction(self.extractor, self.next_instruction_offset, self.routine_interpreter, self)
         return next_instruction
 

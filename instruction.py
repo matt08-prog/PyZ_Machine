@@ -2,10 +2,10 @@
 from hex_extractor import HexExtractor
 
 class Instruction:
-    def __init__(self, extractor, address, interpreter, current_routine):
+    def __init__(self, extractor, address, routine_interpreter, current_routine):
         self.extractor = extractor
         self.starting_address = address
-        self.interpreter = interpreter
+        self.routine_interpreter = routine_interpreter
         self.current_routine = current_routine
         # for short, always 1OP unless code = 1
         self.num_ops_dict = {0: 2, 1: 1, 2: 1, 3: 0}  # large, small, Variable, (Omitted)
@@ -72,11 +72,11 @@ class Instruction:
     
     def load_variable(self, load_target):
         if (load_target == 0x00):
-            return self.interpreter.stack[-1]
+            return self.routine_interpreter.stack[-1]
         elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
             return self.current_routine.local_vars[load_target - 1]
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
-            return self.interpreter.global_vars[load_target - 0x10]
+            return self.routine_interpreter.global_vars[load_target - 0x10]
 
     def load_operands(self, initial_operand_offset):
         operand_offset = initial_operand_offset

@@ -1,0 +1,190 @@
+# instruction_interpreter.py
+from hex_extractor import HexExtractor
+from instruction import Instruction
+from routine import Routine
+
+def binary_to_signed_int(binary_value): # should be moved to global variable file with helper functions
+    print(f"\t\t\t binary value: {binary_value}")
+    binary_str = bin(binary_value)
+    if binary_str[0] == "-":
+        return binary_value
+    else:
+        binary_str = binary_str[2:]
+
+    # Remove any spaces from the binary string
+    binary_str = binary_str.replace(" ", "")
+    
+    print(f"\t\t\t binary string: {binary_str}")
+    # Get the length of the binary string
+    num_bits = len(binary_str)
+    
+    # Convert to integer
+    num = int(binary_str, 2)
+    
+    # If the leftmost bit is 1, it's a negative number in two's complement
+    if num & (1 << (num_bits - 1)):
+        num -= 1 << num_bits
+    
+    return num
+
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+class InstructionInterpreter:
+    def __init__(self, extractor, header, routine_interpreter):
+        self.extractor = extractor
+        self.header = header
+        self.routine_interpreter = routine_interpreter
+
+        self.time_stamp = 0
+
+        # this opcode table should actually call functions from a seperate op_code interpreter class
+        self.opcode_table = {
+            0xe0: self.op_code__call, 
+
+            0x54: self.op_code__add, 
+            0x74: self.op_code__add,
+
+            0x50: self.op_cod__sub,
+
+            0x61: self.op_code__jump_if_equal,
+
+            0x8c: self.op_code__jump,
+
+            0x4F: self.op_code__load_word
+            }
+        
+
+    def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
+        if instruction.full_opcode not in self.opcode_table.keys():
+            print(f"{bcolors.FAIL}opcode ({instruction.full_opcode:02x}) not yet implemented{bcolors.ENDC}")
+            exit(-1)
+        self.opcode_table[instruction.full_opcode](instruction, associated_routine)
+
+
+
+
+
+
+
+
+
+
+
+    def op_code__call(self, instruction, associated_routine):
+        routine_to_call = instruction.operands[0] * 2
+        print(f"\t\t{bcolors.WARNING}__call instruction calls routine ({routine_to_call:05x}){bcolors.ENDC}")
+
+        operands_to_pass_on = instruction.operands[1:]
+        # result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on, self.routine_interpreter)
+
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        # self.store_result(self.run_routine(called_routine), result_storage_target, associated_routine)
+        self.routine_interpreter.store_result(self.routine_interpreter.run_routine(called_routine), instruction.storage_target, associated_routine)
+
+    def op_code__add(self, instruction, associated_routine):
+        result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        augend = binary_to_signed_int(instruction.operands[0])
+        addend = binary_to_signed_int(instruction.operands[1])
+        sum = augend + addend
+        # sum = signed_int_to_unsigned_int(sum)
+
+        self.routine_interpreter.store_result(sum, result_storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__add instruction puts {augend:04x} + {addend:04x} = {sum} into {result_storage_target:04x}{bcolors.ENDC}")
+
+    def op_cod__sub(self, instruction, associated_routine):
+        result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        minuend = binary_to_signed_int(instruction.operands[0])
+        subtrahend = binary_to_signed_int(instruction.operands[1])
+        difference = minuend + subtrahend
+        # difference = signed_int_to_unsigned_int(difference)
+
+        self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference} into {result_storage_target:04x}{bcolors.ENDC}")
+
+
+    def op_code__jump_if_equal(self, instruction, associated_routine):
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+
+        test_condition = (instruction.operands[0] == instruction.operands[1])
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns True{bcolors.ENDC}")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns false{bcolors.ENDC}")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            # update address of next instruction
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            print(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            print(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        print(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        print(f"\t\ttest condition passed: {test_condition}")
+        print(f"\t\tbranch offset: {branch_offset}")
+        print(f"\t\tWill branch: {will_branch}")
+        print(f"\t\tWill return: {will_return}")
+
+    def op_code__load_word(self, instruction, associated_routine):
+        # operand 0 is the start of array and operand 1 is the index of the array
+        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
+        self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+    def op_code__jump(self, instruction, associated_routine):
+        unsigned_branch_offset = instruction.operands[0] - 2
+        signed_branch_offset = binary_to_signed_int(unsigned_branch_offset)
+
+        # update address of next instruction
+        associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
+        
+        print(f"\t\t{bcolors.WARNING}__Jump unconditional jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")

@@ -6,7 +6,7 @@ from abreviator import Abreviator
 from header import Header
 from routine import Routine
 from instruction import Instruction
-from interpreter import Interpreter
+from routine_interpreter import RoutineInterpreter
 
 import argparse
 
@@ -43,7 +43,7 @@ def main():
     exporter = FileExporter(output_file)
     header = Header(hex_data, extractor)
     abreviator = Abreviator(hex_data, extractor, header)
-    interpreter = Interpreter(extractor, header, max_time_step)
+    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step)
 
 
     # Export hex data to file
@@ -57,9 +57,8 @@ def main():
     # Display header data
     header.output_header_info()
 
-
     # Tell Interpreter to get first routine
-    interpreter.start_interpreting()
+    routine_interpreter.start_interpreting()
 
 
 if __name__ == "__main__":
