@@ -280,15 +280,17 @@ class InstructionInterpreter:
         if len(instruction.operands) > 3 or len(instruction.operands) < 3:
             print(f"{bcolors.FAIL}op_code__store_word expected 3 operands but got {len(instruction.operands)}{bcolors.ENDC}")
             exit(-1)
-        dynamic_address_to_store_word_at = instruction.operands[2]
+
+        result_to_store = instruction.operands[2]
+        # operand 0 is the start of array and operand 1 is the index of the array
+        dynamic_address_to_store_word_at = instruction.operands[0] + 2 * instruction.operands[1]
+
+        # error checking
         if dynamic_address_to_store_word_at > self.header.start_of_static_memory:
             print(f"{bcolors.FAIL}op_code__store_word attempted to store a word at ({dynamic_address_to_store_word_at:05x}) which is past the end of dynamic memory ({self.header.start_of_static_memory:05x}){bcolors.ENDC}")
             exit(-1)
 
 
-        # operand 0 is the start of array and operand 1 is the index of the array
-        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
-        # self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
         self.extractor.write_word(dynamic_address_to_store_word_at, result_to_store)
         print(f"\t\t{bcolors.WARNING}__store_word stored {result_to_store:02x} into {dynamic_address_to_store_word_at:05x}{bcolors.ENDC}")
-        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+        associated_routine.next_instruction_offset = instruction.storage_target_address

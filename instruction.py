@@ -90,7 +90,7 @@ class Instruction:
             print(f"\t\t{bcolors.FAIL}load ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x}){bcolors.ENDC}")
             return self.current_routine.local_vars[load_target - 1]
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
-            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x}){bcolors.ENDC}")
+            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x} ({load_target - 0x10})){bcolors.ENDC}")
             return self.routine_interpreter.global_vars[load_target - 0x10]
 
     def load_operands(self, initial_operand_offset):

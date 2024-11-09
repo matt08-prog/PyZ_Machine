@@ -44,7 +44,7 @@ class RoutineInterpreter:
         self.global_vars = [0x00] * 310
         self.global_vars = self.extractor.get_init_global_data(self.header.start_of_globals_table)
         print(f"global_vars (length={len(self.global_vars)}): {list(map(hex, self.global_vars))}")
-
+        print(f"global var 1f = {self.global_vars[0x1f]:04x}")
         self.debug_instruction_index = 0
         self.debug_instruction_form_dict = {0: "short", 1: "long", 2: "variable"}
         # self.operand_types_dict = {2: "Large Constant (2 bytes)", 1: "Small (1 byte)", -1: "Variable (1 byte)"}
