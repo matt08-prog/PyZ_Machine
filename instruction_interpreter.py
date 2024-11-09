@@ -69,10 +69,11 @@ class bcolors:
 
 
 class InstructionInterpreter:
-    def __init__(self, extractor, header, routine_interpreter):
+    def __init__(self, extractor, header, routine_interpreter, object_loader):
         self.extractor = extractor
         self.header = header
         self.routine_interpreter = routine_interpreter
+        self.object_loader = object_loader
 
         self.time_stamp = 0
 
@@ -92,7 +93,12 @@ class InstructionInterpreter:
             0x4F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
 
+            0x0d: self.op_code__store,
+            0x2d: self.op_code__store,
+
             0xe3: self.op_code__put_prop,
+
+            0x4a: self.op_code__test_attribute,
 
             0xab: self.op_code__return
             }
@@ -297,14 +303,42 @@ class InstructionInterpreter:
         print(f"\t\t{bcolors.WARNING}__store_word stored {result_to_store:02x} into {dynamic_address_to_store_word_at:05x}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
+    def op_code__store(self, instruction, associated_routine):
+        value_to_store = instruction.operands[1]
+        variable_store_destination = instruction.operands[0]
+
+        self.routine_interpreter.store_result(value_to_store, variable_store_destination, associated_routine)
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.WARNING}__store stored {value_to_store:02x} into {variable_store_destination:05x}{bcolors.ENDC}")
+
+
+
     def op_code__put_prop(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        property_number = instruction.operands[1]
+        value = instruction.operands[2]
+
+        self.object_loader.put_value_in_property(object_number, property_number, value)
+        associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.OKCYAN}__put_prop returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+
+    def op_code__test_attribute(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        attribute = instruction.operands[1]
+        unsigned_branch_offset = instruction.branch_target_address
+        signed_branch_offset = binary_to_signed_int(unsigned_branch_offset)
+
+        if self.object_loader.test_attribute(object_number, attribute):
+            associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
+            print(f"\t\t{bcolors.WARNING}__test_attribute jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            associated_routine.next_instruction_offset = instruction.storage_target_address
+            print(f"\t\t{bcolors.WARNING}__test_attribute did not jump {bcolors.ENDC}")
+
 
     def op_code__return(self, instruction, associated_routine):
         associated_routine.should_return = True
         associated_routine.return_value = instruction.operands[0]
         print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
-
-
 
     # (self, instruction, associated_routine):

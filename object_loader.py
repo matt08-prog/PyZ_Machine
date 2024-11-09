@@ -15,10 +15,10 @@ class ObjectLoader:
         objects = []
         start_of_next_object = self.header.start_of_objects_table
         self.start_of_properties_table = self.extractor.read_word(start_of_next_object + 7)
-        object_index = 0
+        object_index = 1
 
-        # while start_of_next_object != self.start_of_properties_table:
-        while object_index < 5:
+        while start_of_next_object != self.start_of_properties_table:
+        # while object_index < 5:
             objects.append(self.load_object(object_index, start_of_next_object))
             start_of_next_object += 9
             object_index += 1
@@ -77,3 +77,16 @@ class ObjectLoader:
             print(f"prop_num: {property_number}")
             property_index += num_property_bytes + 1 
         return properties
+
+    def put_value_in_property(self, object_number, property_number, value):
+        for obj in self.objects:
+            if obj.object_number == object_number:
+                obj.put_value_in_property(property_number, value)
+                break
+        
+    def test_attribute(self, object_number, attribute):
+        for obj in self.objects:
+            if  obj.object_number == object_number:
+                # print(list(map(hex, obj.attribute_flags)))
+                # print(obj.attribute_flags)
+                return attribute in obj.attribute_flags

@@ -46,7 +46,7 @@ def main():
     abreviator = Abreviator(hex_data, extractor, header)
     objectLoader = ObjectLoader(extractor, header)
     print()
-    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step)
+    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader)
     
 
     # Export hex data to file

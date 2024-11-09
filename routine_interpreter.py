@@ -32,11 +32,11 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class RoutineInterpreter:
-    def __init__(self, extractor, header, max_time_step):
+    def __init__(self, extractor, header, max_time_step, object_loader):
         self.extractor = extractor
         self.header = header
         self.max_time_step = max_time_step
-        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self)
+        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self, object_loader)
 
         self.time_stamp = 0
         
