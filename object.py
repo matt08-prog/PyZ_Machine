@@ -16,7 +16,7 @@ class Object:
         self.properties = props
 
         self.properties_table = []
-        print(f"object_number: {object_number} has attributes: {attribute_table}")
+        # print(f"object_number: {object_number} has attributes: {attribute_table}")
         # print(f"\tHas p: {self.parent}")
         # print(f"\tHas s: {self.child}")
         # print(f"\tHas c: {self.sibling}")

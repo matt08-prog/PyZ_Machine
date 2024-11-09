@@ -32,11 +32,11 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class RoutineInterpreter:
-    def __init__(self, extractor, header, max_time_step, object_loader):
+    def __init__(self, extractor, header, max_time_step, object_loader, abreviator):
         self.extractor = extractor
         self.header = header
         self.max_time_step = max_time_step
-        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self, object_loader)
+        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self, object_loader, abreviator)
 
         self.time_stamp = 0
         
@@ -70,9 +70,12 @@ class RoutineInterpreter:
             # print(f"\tnum_ops: {next_instruction.num_ops}")
             # print(f"\topcode: {next_instruction.opcode}")
             print(f"\toperand_types: [", end="")
-            for operand_index in range(len(next_instruction.operand_types)):
-                end_string = ", " if operand_index != len(next_instruction.operand_types) - 1 else "]\n" 
-                print(f"{self.operand_types_dict[next_instruction.operand_types[operand_index]]}" , end=end_string)
+            if next_instruction.num_ops > 0: # some instruction like print have 0Ops
+                for operand_index in range(len(next_instruction.operand_types)):
+                    end_string = ", " if operand_index != len(next_instruction.operand_types) - 1 else "]\n" 
+                    print(f"{self.operand_types_dict[next_instruction.operand_types[operand_index]]}" , end=end_string)
+            else:
+                print("]")
             print(f"\toriginal operands: {next_instruction.debug_operands}")
             print(f"\t         operands: {list(map(hex, next_instruction.operands))}")
             # print(f"\taddress_of_store_target (if it exists): {next_instruction.storage_target_address:02x}")

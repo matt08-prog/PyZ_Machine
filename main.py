@@ -36,6 +36,7 @@ def main():
 
     hex_data = [] # tuple in format (decimal_index, byte_value) where each entry represents a byte of data
 
+
     # Extract hex data
     extractor = HexExtractor(input_file, hex_data)
     hex_data = extractor.extract_hex()
@@ -46,8 +47,8 @@ def main():
     abreviator = Abreviator(hex_data, extractor, header)
     objectLoader = ObjectLoader(extractor, header)
     print()
-    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader)
-    
+    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator)
+    extractor.load_abreviator(abreviator.abreviations_table)
 
     # Export hex data to file
     if should_dump_input_file:

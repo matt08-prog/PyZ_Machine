@@ -15,6 +15,7 @@ class HexExtractor:
     def __init__(self, file_path, hex_data):
         self.file_path = file_path
         self.hex_data = hex_data
+        self.abreviations_table = None
         self.alphabet = [
             [" ", "", "", "", "", "", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
             [" ", "", "", "", "", "", 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], 
@@ -70,7 +71,10 @@ class HexExtractor:
         return result
         
 
-    def read_string(self, base_address):
+    def load_abreviator(self, abreviator_table):
+        self.abreviator_table = abreviator_table
+
+    def read_string(self, base_address, abreviations_table=None):
         current_address = base_address
         current_alphabet = 0 # A0 = lowercase, A1 = Uppercase, A2 = punctuation
         next_alphabet = 0 # A0 = lowercase, A1 = Uppercase, A2 = punctuation
@@ -78,14 +82,27 @@ class HexExtractor:
         final_string = ""
         while True:
             word = self.read_word(current_address)
+            next_word = self.read_word(current_address + 1)
             z_word_sign = ((word & 0b1000000000000000) >> 15)
             z_words.append((word & 0b0111110000000000) >> 10)
             z_words.append((word & 0b0000001111100000) >> 5)
             z_words.append(word & 0b0000000000011111)
 
-            for z_word in z_words:
+            for z_word_index in range(len(z_words)):
+                z_word = z_words[z_word_index]
+                next_z_word = 0
+                if z_word_index < len(z_words) - 1:
+                    next_z_word = z_words[z_word_index + 1]
+                else:
+                    next_z_word = ((next_word & 0b1000000000000000) >> 15)
                 current_alphabet = next_alphabet
-                if (z_word == 4):
+                if (z_word in [1, 2, 3]):
+                    print(f"zword: {z_word} {abreviations_table}")
+                    if abreviations_table != None:
+                        # print(f"abreviations_table: {abreviations_table}")
+                        final_string += self.abreviator.abreviations_table[32* (z_word - 1) + next_z_word]
+
+                elif (z_word == 4):
                     next_alphabet = 1
                 elif (z_word == 5):
                     next_alphabet = 2

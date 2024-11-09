@@ -69,11 +69,12 @@ class bcolors:
 
 
 class InstructionInterpreter:
-    def __init__(self, extractor, header, routine_interpreter, object_loader):
+    def __init__(self, extractor, header, routine_interpreter, object_loader, abreviator):
         self.extractor = extractor
         self.header = header
         self.routine_interpreter = routine_interpreter
         self.object_loader = object_loader
+        self.abreviator = abreviator
 
         self.time_stamp = 0
 
@@ -100,7 +101,9 @@ class InstructionInterpreter:
 
             0x4a: self.op_code__test_attribute,
 
-            0xab: self.op_code__return
+            0xab: self.op_code__return,
+
+            0xb2: self.op_code__print,
             }
         
 
@@ -332,7 +335,7 @@ class InstructionInterpreter:
             associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
             print(f"\t\t{bcolors.WARNING}__test_attribute jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
         else:
-            associated_routine.next_instruction_offset = instruction.storage_target_address
+            associated_routine.next_instruction_offset = instruction.branch_target_address
             print(f"\t\t{bcolors.WARNING}__test_attribute did not jump {bcolors.ENDC}")
 
 
@@ -341,4 +344,11 @@ class InstructionInterpreter:
         associated_routine.return_value = instruction.operands[0]
         print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
 
+    def op_code__print(self, instruction, associated_routine):
+        print(self.abreviator.abreviations_table)
+        string_to_print = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        print(f"\t\t{bcolors.OKCYAN}__print printed {string_to_print}{bcolors.ENDC}")
+
+    # (self, instruction, associated_routine):
     # (self, instruction, associated_routine):

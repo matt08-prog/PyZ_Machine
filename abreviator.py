@@ -9,6 +9,7 @@ class Abreviator:
         self.extractor = extractor
         self.num_abreviations = 96 # 96 vor V3+, 32 for V1/V2
         self.abreviations_table = self.load_abreivations()
+        print(f"self.abreviations_table: {self.abreviations_table}")
 
     def load_abreivations(self):
         base_addr = self.header.start_of_abreviations_address_table

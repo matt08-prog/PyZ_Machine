@@ -73,8 +73,8 @@ class ObjectLoader:
             # stored as an array
             "property_data": self.extractor.read_bytes_as_array(starting_address + 1 + property_index, num_property_bytes)
                 })
-            print(f"num prop bytes {num_property_bytes}")
-            print(f"prop_num: {property_number}")
+            # print(f"num prop bytes {num_property_bytes}")
+            # print(f"prop_num: {property_number}")
             property_index += num_property_bytes + 1 
         return properties
 
