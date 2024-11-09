@@ -7,6 +7,7 @@ from header import Header
 from routine import Routine
 from instruction import Instruction
 from routine_interpreter import RoutineInterpreter
+from object_loader import ObjectLoader
 
 import argparse
 
@@ -43,8 +44,10 @@ def main():
     exporter = FileExporter(output_file)
     header = Header(hex_data, extractor)
     abreviator = Abreviator(hex_data, extractor, header)
+    objectLoader = ObjectLoader(extractor, header)
+    print()
     routine_interpreter = RoutineInterpreter(extractor, header, max_time_step)
-
+    
 
     # Export hex data to file
     if should_dump_input_file:

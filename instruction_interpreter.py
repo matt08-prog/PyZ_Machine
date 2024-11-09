@@ -86,14 +86,15 @@ class InstructionInterpreter:
             0x55: self.op_cod__sub,
 
             0xa0: self.op_code__jump_if_zero,
-
             0x61: self.op_code__jump_if_equal,
-
             0x8c: self.op_code__jump,
 
             0x4F: self.op_code__load_word,
+            0xe1: self.op_code__store_word,
 
-            0xe1: self.op_code__store_word
+            0xe3: self.op_code__put_prop,
+
+            0xab: self.op_code__return
             }
         
 
@@ -267,6 +268,7 @@ class InstructionInterpreter:
         
         print(f"\t\t{bcolors.WARNING}__Jump unconditional jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
 
+    ##//*-/*-/*-/*-/*-/*-/*-/*-/*-/*- May need to look this over to ensure its implemented correctly
     # Puts whatever value is at array[word-index*2] into the given target
     def op_code__load_word(self, instruction, associated_routine):
         # operand 0 is the start of array and operand 1 is the index of the array
@@ -294,3 +296,15 @@ class InstructionInterpreter:
         self.extractor.write_word(dynamic_address_to_store_word_at, result_to_store)
         print(f"\t\t{bcolors.WARNING}__store_word stored {result_to_store:02x} into {dynamic_address_to_store_word_at:05x}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address
+
+    def op_code__put_prop(self, instruction, associated_routine):
+        print(f"\t\t{bcolors.OKCYAN}__put_prop returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+
+    def op_code__return(self, instruction, associated_routine):
+        associated_routine.should_return = True
+        associated_routine.return_value = instruction.operands[0]
+        print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+
+
+
+    # (self, instruction, associated_routine):

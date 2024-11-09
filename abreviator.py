@@ -18,7 +18,7 @@ class Abreviator:
         for address_table_offset in range(0, self.num_abreviations * 2, 2):
             self.abreviation_addresses.append(self.extractor.read_word(base_addr + address_table_offset) * 2)
             address_index += 1
-            
+    
     def print_abreviations(self):
         for address_index in range(len(self.abreviation_addresses)):
             abreviation_address = self.abreviation_addresses[address_index]

@@ -23,7 +23,6 @@ class HexExtractor:
 
     def get_init_global_data(self, start_of_global_data_table):
         globals_data = []
-        print(f"start of globals data: {start_of_global_data_table:05x}")
         for global_data_address in range(0, 310, 2):
             read_word = self.read_word(start_of_global_data_table + global_data_address)
             read_word = read_word - (read_word >> 15 << 16)
@@ -55,6 +54,21 @@ class HexExtractor:
 
     def read_byte(self, address):
         return int(self.hex_data[address][1], base=16)
+
+    def read_bytes(self, address, n):
+        result = 0
+        for i in range(n):
+            byte = self.read_byte(address + i)
+            result = (result << 8) | byte
+        return result
+
+    def read_bytes_as_array(self, address, n):
+        result = []
+        for i in range(n):
+            byte = self.read_byte(address + i)
+            result.append(byte)
+        return result
+        
 
     def read_string(self, base_address):
         current_address = base_address

@@ -10,6 +10,8 @@ class Header:
         self.start_of_global_variables = self.extractor.read_word(0x0c)
         self.start_of_static_memory = self.extractor.read_word(0x0e)
         self.start_of_globals_table = self.extractor.read_word(0x0c)
+        self.start_of_objects_defaults_table = self.extractor.read_word(0x0a)
+        self.start_of_objects_table = self.extractor.read_word(0x0a) + 62
 
     def output_header_info(self):
         # Print number of bytes
