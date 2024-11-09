@@ -28,7 +28,33 @@ def binary_to_signed_int(binary_value): # should be moved to global variable fil
     
     return num
 
+def add_16bit_signed(a, b):
+    # Ensure inputs are within 16-bit signed range
+    a = a & 0xFFFF
+    b = b & 0xFFFF
+    
+    # Perform addition
+    result = (a + b) & 0xFFFF
+    
+    # Handle sign extension
+    if result & 0x8000:
+        result = result - 0x10000
+    
+    return result
 
+def sub_16bit_signed(a, b):
+    # Ensure inputs are within 16-bit signed range
+    a = a & 0xFFFF
+    b = b & 0xFFFF
+    
+    # Perform addition
+    result = (a - b) & 0xFFFF
+    
+    # Handle sign extension
+    if result & 0x8000:
+        result = result - 0x10000
+    
+    return result
 
 class bcolors:
     HEADER = '\033[95m'
@@ -65,7 +91,9 @@ class InstructionInterpreter:
 
             0x8c: self.op_code__jump,
 
-            0x4F: self.op_code__load_word
+            0x4F: self.op_code__load_word,
+
+            0xe1: self.op_code__store_word
             }
         
 
@@ -105,13 +133,15 @@ class InstructionInterpreter:
         # update address of next instruction based on if there was a store byte or branch byte
         associated_routine.next_instruction_offset = instruction.storage_target_address + 1
 
-        augend = binary_to_signed_int(instruction.operands[0])
-        addend = binary_to_signed_int(instruction.operands[1])
-        sum = augend + addend
-        # sum = signed_int_to_unsigned_int(sum)
+        augend = instruction.operands[0]
+        addend = instruction.operands[1]
+        # sum = (augend + addend) & 0xFFFF
+
+
+        sum = add_16bit_signed(augend, addend)
 
         self.routine_interpreter.store_result(sum, result_storage_target, associated_routine)
-        print(f"\t\t{bcolors.WARNING}__add instruction puts {augend:04x} + {addend:04x} = {sum} into {result_storage_target:04x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}__add instruction puts {augend:04x} + {addend:04x} = {sum:04x} into {result_storage_target:04x}{bcolors.ENDC}")
 
     def op_cod__sub(self, instruction, associated_routine):
         result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
@@ -119,13 +149,14 @@ class InstructionInterpreter:
         # update address of next instruction based on if there was a store byte or branch byte
         associated_routine.next_instruction_offset = instruction.storage_target_address + 1
 
-        minuend = binary_to_signed_int(instruction.operands[0])
-        subtrahend = binary_to_signed_int(instruction.operands[1])
-        difference = minuend - subtrahend
-        # difference = signed_int_to_unsigned_int(difference)
+        minuend = instruction.operands[0]
+        subtrahend = instruction.operands[1]
+        # difference = (minuend - subtrahend) & 0xFF
+
+        difference = sub_16bit_signed(minuend, subtrahend)
 
         self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
-        print(f"\t\t{bcolors.WARNING}__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference} into {result_storage_target:04x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference:04x} into {result_storage_target:04x}{bcolors.ENDC}")
 
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
@@ -227,13 +258,6 @@ class InstructionInterpreter:
         print(f"\t\tWill branch: {will_branch}")
         print(f"\t\tWill return: {will_return}")
 
-    def op_code__load_word(self, instruction, associated_routine):
-        # operand 0 is the start of array and operand 1 is the index of the array
-        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
-        self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
-        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} into {instruction.storage_target:02x}{bcolors.ENDC}")
-        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
-
     def op_code__jump(self, instruction, associated_routine):
         unsigned_branch_offset = instruction.operands[0] - 2
         signed_branch_offset = binary_to_signed_int(unsigned_branch_offset)
@@ -242,3 +266,29 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
         
         print(f"\t\t{bcolors.WARNING}__Jump unconditional jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+
+    # Puts whatever value is at array[word-index*2] into the given target
+    def op_code__load_word(self, instruction, associated_routine):
+        # operand 0 is the start of array and operand 1 is the index of the array
+        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
+        self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+    # Writes "value" to dynamic_memory[array[2*word-index]]
+    def op_code__store_word(self, instruction, associated_routine):
+        if len(instruction.operands) > 3 or len(instruction.operands) < 3:
+            print(f"{bcolors.FAIL}op_code__store_word expected 3 operands but got {len(instruction.operands)}{bcolors.ENDC}")
+            exit(-1)
+        dynamic_address_to_store_word_at = instruction.operands[2]
+        if dynamic_address_to_store_word_at > self.header.start_of_static_memory:
+            print(f"{bcolors.FAIL}op_code__store_word attempted to store a word at ({dynamic_address_to_store_word_at:05x}) which is past the end of dynamic memory ({self.header.start_of_static_memory:05x}){bcolors.ENDC}")
+            exit(-1)
+
+
+        # operand 0 is the start of array and operand 1 is the index of the array
+        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
+        # self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
+        self.extractor.write_word(dynamic_address_to_store_word_at, result_to_store)
+        print(f"\t\t{bcolors.WARNING}__store_word stored {result_to_store:02x} into {dynamic_address_to_store_word_at:05x}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1

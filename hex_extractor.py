@@ -1,5 +1,16 @@
 # hex_extractor.py
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 class HexExtractor:
     def __init__(self, file_path, hex_data):
         self.file_path = file_path
@@ -10,6 +21,15 @@ class HexExtractor:
             [" ", "", "", "", "", "", " ", "^", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "!", "?", "_", "#", "'", "\"", "/", "\\", "-", ":", "(", ")"]
         ]
 
+    def get_init_global_data(self, start_of_global_data_table):
+        globals_data = []
+        print(f"start of globals data: {start_of_global_data_table:05x}")
+        for global_data_address in range(0, 310, 2):
+            read_word = self.read_word(start_of_global_data_table + global_data_address)
+            read_word = read_word - (read_word >> 15 << 16)
+            globals_data.append(read_word)
+        return globals_data
+
     def extract_hex(self):
         with open(self.file_path, 'rb') as file:
             byte = file.read(1)
@@ -19,6 +39,15 @@ class HexExtractor:
                 address += 1
                 byte = file.read(1)
         return self.hex_data
+    
+    def write_word(self, address, word_to_store):
+        if (int.bit_length(word_to_store) > 16):
+            print(f"{bcolors.FAIL}The word ({word_to_store:04x}) trying to be written to memory ({address:05x}) is not 16-bits long{bcolors.ENDC}")
+            exit(-1)
+        self.hex_data[address] = (word_to_store & 0xFF00) >> 8
+        self.hex_data[address + 1] = (word_to_store & 0x00FF)
+        print(f"\t\t{bcolors.OKBLUE}The word ({word_to_store:04x}) was written to address ({address:05x}){bcolors.ENDC}")
+
     
     # returns decimal value of word at given address
     def read_word(self, address):

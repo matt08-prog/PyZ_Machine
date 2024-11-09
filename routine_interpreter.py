@@ -41,7 +41,9 @@ class RoutineInterpreter:
         self.time_stamp = 0
         
         self.stack = []
-        self.global_vars = [0x00] * 240
+        self.global_vars = [0x00] * 310
+        self.global_vars = self.extractor.get_init_global_data(self.header.start_of_globals_table)
+        print(f"global_vars (length={len(self.global_vars)}): {list(map(hex, self.global_vars))}")
 
         self.debug_instruction_index = 0
         self.debug_instruction_form_dict = {0: "short", 1: "long", 2: "variable"}
