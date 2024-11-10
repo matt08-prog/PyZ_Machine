@@ -12,14 +12,14 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class HexExtractor:
-    def __init__(self, file_path, hex_data):
+    def __init__(self, file_path, hex_data, abreviator):
         self.file_path = file_path
         self.hex_data = hex_data
-        self.abreviations_table = None
+        self.abreviator = abreviator
         self.alphabet = [
             [" ", "", "", "", "", "", 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
             [" ", "", "", "", "", "", 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'], 
-            [" ", "", "", "", "", "", " ", "^", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "!", "?", "_", "#", "'", "\"", "/", "\\", "-", ":", "(", ")"]
+            [" ", "", "", "", "", "", " ", "\n", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "!", "?", "_", "#", "'", "\"", "/", "\\", "-", ":", "(", ")"]
         ]
 
     def get_init_global_data(self, start_of_global_data_table):
@@ -80,41 +80,48 @@ class HexExtractor:
         next_alphabet = 0 # A0 = lowercase, A1 = Uppercase, A2 = punctuation
         z_words = []
         final_string = ""
+        should_skip_index = 0
         while True:
             word = self.read_word(current_address)
-            next_word = self.read_word(current_address + 1)
+            next_word = self.read_word(current_address + 2)
             z_word_sign = ((word & 0b1000000000000000) >> 15)
             z_words.append((word & 0b0111110000000000) >> 10)
             z_words.append((word & 0b0000001111100000) >> 5)
             z_words.append(word & 0b0000000000011111)
 
             for z_word_index in range(len(z_words)):
-                z_word = z_words[z_word_index]
-                next_z_word = 0
-                if z_word_index < len(z_words) - 1:
-                    next_z_word = z_words[z_word_index + 1]
-                else:
-                    next_z_word = ((next_word & 0b1000000000000000) >> 15)
-                current_alphabet = next_alphabet
-                if (z_word in [1, 2, 3]):
-                    print(f"zword: {z_word} {abreviations_table}")
-                    if abreviations_table != None:
-                        # print(f"abreviations_table: {abreviations_table}")
-                        final_string += self.abreviator.abreviations_table[32* (z_word - 1) + next_z_word]
-
-                elif (z_word == 4):
-                    next_alphabet = 1
-                elif (z_word == 5):
-                    next_alphabet = 2
-                else:
-                    if (current_alphabet == 2 and z_word == 6):
-                        final_string += "_10_bit_ZSCII_CHAR_ESCAPE_"
+                if should_skip_index == 0:
+                    z_word = z_words[z_word_index]
+                    next_z_word = 0
+                    if z_word_index < len(z_words) - 1:
+                        next_z_word = z_words[z_word_index + 1]
                     else:
-                        final_string += self.alphabet[current_alphabet][z_word]
+                        next_z_word = ((next_word & 0b0111110000000000) >> 10)
+                    current_alphabet = next_alphabet
+                    if (z_word in [1, 2, 3]):
+                        if self.abreviator != None:
+                            abreviated_zword = self.abreviator.abreviations_table[32* (z_word - 1) + next_z_word]
+                            print(f"abreviated zword: {z_word} {abreviated_zword}")
+                            final_string += abreviated_zword
+                            current_alphabet = next_alphabet = 0
+                            should_skip_index = 1
 
-                if current_alphabet == next_alphabet:
-                    current_alphabet = next_alphabet = 0
-                
+                    elif (z_word == 4):
+                        next_alphabet = 1
+                    elif (z_word == 5):
+                        next_alphabet = 2
+                    else:
+                        if (current_alphabet == 2 and z_word == 6):
+                            final_string += "_10_bit_ZSCII_CHAR_ESCAPE_"
+                        else:
+                            word = self.alphabet[current_alphabet][z_word]
+                            final_string += word
+                            print(f"           zword: {word}")
+
+                    if current_alphabet == next_alphabet:
+                        current_alphabet = next_alphabet = 0
+                else:
+                    should_skip_index -= 1
             if (z_word_sign == 1):
                 return final_string
             

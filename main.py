@@ -38,17 +38,18 @@ def main():
 
 
     # Extract hex data
-    extractor = HexExtractor(input_file, hex_data)
+    abreviator = Abreviator()
+    extractor = HexExtractor(input_file, hex_data, abreviator)
     hex_data = extractor.extract_hex()
 
     # Initiate sub-modules
     exporter = FileExporter(output_file)
     header = Header(hex_data, extractor)
-    abreviator = Abreviator(hex_data, extractor, header)
+    abreviator.load_abreivations(extractor, header)
     objectLoader = ObjectLoader(extractor, header)
     print()
     routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator)
-    extractor.load_abreviator(abreviator.abreviations_table)
+    # extractor.load_abreviator(abreviator.abreviations_table)
 
     # Export hex data to file
     if should_dump_input_file:

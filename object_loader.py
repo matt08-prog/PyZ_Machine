@@ -56,7 +56,7 @@ class ObjectLoader:
         num_descirption_words = self.extractor.read_byte(starting_address)
         description = self.extractor.read_string(starting_address + 1)
         final_address = starting_address + (num_descirption_words * 2) + 1
-        print(description)
+        # print(description)
         return {"final_address": final_address}
 
     def load_properties(self, starting_address):

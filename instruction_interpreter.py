@@ -345,10 +345,9 @@ class InstructionInterpreter:
         print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
 
     def op_code__print(self, instruction, associated_routine):
-        print(self.abreviator.abreviations_table)
         string_to_print = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
         associated_routine.next_instruction_offset = instruction.branch_target_address
-        print(f"\t\t{bcolors.OKCYAN}__print printed {string_to_print}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.OKCYAN}__print printed\n{string_to_print}{bcolors.ENDC}")
 
     # (self, instruction, associated_routine):
     # (self, instruction, associated_routine):
