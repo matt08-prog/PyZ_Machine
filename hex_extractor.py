@@ -101,7 +101,7 @@ class HexExtractor:
                     if (z_word in [1, 2, 3]):
                         if self.abreviator != None:
                             abreviated_zword = self.abreviator.abreviations_table[32* (z_word - 1) + next_z_word]
-                            print(f"abreviated zword: {z_word} {abreviated_zword}")
+                            # print(f"abreviated zword: {z_word} {abreviated_zword}")
                             final_string += abreviated_zword
                             current_alphabet = next_alphabet = 0
                             should_skip_index = 1
@@ -116,14 +116,14 @@ class HexExtractor:
                         else:
                             word = self.alphabet[current_alphabet][z_word]
                             final_string += word
-                            print(f"           zword: {word}")
+                            # print(f"           zword: {word}")
 
                     if current_alphabet == next_alphabet:
                         current_alphabet = next_alphabet = 0
                 else:
                     should_skip_index -= 1
             if (z_word_sign == 1):
-                return final_string
+                return [final_string, current_address + 2]
             
             z_words = []
             current_address += 2

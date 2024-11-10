@@ -16,7 +16,7 @@ class Abreviator:
         for address_table_offset in range(0, self.num_abreviations * 2, 2):
             address = extractor.read_word(base_addr + address_table_offset) * 2
             self.abreviation_addresses.append(address)
-            abreviation = extractor.read_string(address)
+            abreviation = extractor.read_string(address)[0]
             self.abreviations_table.append(abreviation)
             print(f"    abreviation: \"{abreviation}\"")
             address_index += 1

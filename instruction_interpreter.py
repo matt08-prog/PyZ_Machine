@@ -92,6 +92,7 @@ class InstructionInterpreter:
             0x8c: self.op_code__jump,
 
             0x4F: self.op_code__load_word,
+            0x0F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
 
             0x0d: self.op_code__store,
@@ -104,6 +105,7 @@ class InstructionInterpreter:
             0xab: self.op_code__return,
 
             0xb2: self.op_code__print,
+            0xbb: self.op_code__new_line
             }
         
 
@@ -345,9 +347,15 @@ class InstructionInterpreter:
         print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
 
     def op_code__print(self, instruction, associated_routine):
-        string_to_print = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
-        associated_routine.next_instruction_offset = instruction.branch_target_address
+        HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
+        string_to_print = HexExtractor_read_string_object[0]
+        final_address_after_string = HexExtractor_read_string_object[1]
+        associated_routine.next_instruction_offset = final_address_after_string
         print(f"\t\t{bcolors.OKCYAN}__print printed\n{string_to_print}{bcolors.ENDC}")
 
-    # (self, instruction, associated_routine):
+
+    def op_code__new_line(self, instruction, associated_routine):
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.OKCYAN}__new_line\n{bcolors.ENDC}")
+
     # (self, instruction, associated_routine):
