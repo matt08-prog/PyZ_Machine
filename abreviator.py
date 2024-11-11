@@ -18,7 +18,7 @@ class Abreviator:
             self.abreviation_addresses.append(address)
             abreviation = extractor.read_string(address)[0]
             self.abreviations_table.append(abreviation)
-            print(f"    abreviation: \"{abreviation}\"")
+            # print(f"    abreviation: \"{abreviation}\"")
             address_index += 1
         print(f"self.abreviations_table: {self.abreviations_table}")
     

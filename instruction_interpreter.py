@@ -146,8 +146,10 @@ class InstructionInterpreter:
             0xc9: self.op_code__and,
 
             0xa0: self.op_code__jump_if_zero,
+            0xc1: self.op_code__jump_if_equal,
             0x61: self.op_code__jump_if_equal,
             0x41: self.op_code__jump_if_equal,
+            0x43: self.op_code__jump_if_greater_than,
             0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
 
@@ -163,6 +165,7 @@ class InstructionInterpreter:
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
             0x51: self.op_code__get_property,
+            0xa1: self.op_code__get_sibling_of_object,
             0xa2: self.op_code__get_child_of_object,
             0xa3: self.op_code__get_parent_of_object,
             0x4c: self.op_code__clear_attribute,
@@ -174,6 +177,7 @@ class InstructionInterpreter:
 
             0xb2: self.op_code__print,
             0xe6: self.op_code__print_num,
+            0xad: self.op_code__print_string_at_packed_address,
             0xbb: self.op_code__new_line
             }
         
@@ -247,8 +251,8 @@ class InstructionInterpreter:
         print(f"\t\t{bcolors.OKCYAN}__new_line\n{bcolors.ENDC}")
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
-        if len(instruction.operands) > 2 or len(instruction.operands) < 2:
-            print(f"{bcolors.FAIL}op_code__jump_if_equal expected 2 operands but got {len(instruction.operands)}{bcolors.ENDC}")
+        if len(instruction.operands) > 3 or len(instruction.operands) < 2:
+            print(f"{bcolors.FAIL}op_code__jump_if_equal expected 2 or 3 operands but got {len(instruction.operands)}{bcolors.ENDC}")
             exit(-1)
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
         invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
@@ -258,7 +262,7 @@ class InstructionInterpreter:
         will_return = False
         will_branch = False
 
-        test_condition = (instruction.operands[0] == instruction.operands[1])
+        test_condition = (instruction.operands[0] == instruction.operands[1]) or (instruction.operands[0] == instruction.operands[-1])
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
             if branch_info_num_bytes == 1:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
@@ -285,6 +289,8 @@ class InstructionInterpreter:
         else:
             # update address of next instruction
             associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+            print(f"\t\t{bcolors.WARNING}__Jump_if_equal does not branch{bcolors.ENDC}")
+
         
         # Debug info:
         if branch_info_num_bytes == 1:
@@ -296,6 +302,19 @@ class InstructionInterpreter:
         print(f"\t\tbranch offset: {branch_offset}")
         print(f"\t\tWill branch: {will_branch}")
         print(f"\t\tWill return: {will_return}")
+
+    def op_code__jump_if_greater_than(self, instruction, associated_routine):
+        if len(instruction.operands) > 2 or len(instruction.operands) < 2:
+            print(f"{bcolors.FAIL}op_code__jump_if_greater_than expected 2 operands but got {len(instruction.operands)}{bcolors.ENDC}")
+            exit(-1)
+        
+        value_a = binary_word_16_bits_to_signed_int(instruction.operands[0])
+        value_b = binary_word_16_bits_to_signed_int(instruction.operands[1])
+
+        test_condition = (value_a > value_b)
+
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, False, "__jump_if_greater_than")
+
 
     def op_code__jump_if_zero(self, instruction, associated_routine):
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
@@ -401,13 +420,16 @@ class InstructionInterpreter:
 
         self.object_loader.put_value_in_property(object_number, property_number, value)
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        print(f"\t\t{bcolors.OKCYAN}__put_prop returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.OKCYAN}__put_prop placed property_number #{property_number} in object #{object_number}{bcolors.ENDC}")
 
 
     def branch_if_test_condition_passes(self, instruction, associated_routine, test_condition, has_storage_target, op_code_name):
         # account for the few instructions which store a result and then possibly branch
         if has_storage_target:
             instruction.storage_target_address += 1
+            instruction.branch_target_address += 1
+            instruction.storage_target = self.extractor.read_byte(instruction.storage_target_address)
+            instruction.branch_target = self.extractor.read_byte(instruction.branch_target_address)
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
         invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
         address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
@@ -415,14 +437,17 @@ class InstructionInterpreter:
 
         will_return = False
         will_branch = False
+
+        # calculate branch offset before tesing branch_condition
+        if branch_info_num_bytes == 1:
+            branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+        elif branch_info_num_bytes == 2:
+            unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+            branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
+        else:
+            raise Exception("branch info num bytes not between 1 and 2")
+        
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
-            if branch_info_num_bytes == 1:
-                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
-            elif branch_info_num_bytes == 2:
-                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
-                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
-            else:
-                raise Exception("branch info num bytes not between 1 and 2")
 
             if branch_offset == 0:
                 associated_routine.return_value = False
@@ -468,6 +493,7 @@ class InstructionInterpreter:
         will_branch = False
 
         test_condition = self.object_loader.test_attribute(object_number, attribute)
+        print(f"\t\t{bcolors.WARNING}__test_attribute found that object #{object_number} does{"" if test_condition else " not"} have attribute #{attribute} {bcolors.ENDC}")
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
             if branch_info_num_bytes == 1:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
@@ -535,6 +561,18 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(property_value, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
 
+    # Get next object in tree, branching if this exists, i.e. is not 0.
+    def op_code__get_sibling_of_object(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        sibling_object_number = self.object_loader.get_object_sibling(object_number)
+        storage_target = instruction.storage_target
+        self.routine_interpreter.store_result(sibling_object_number, storage_target, associated_routine)
+
+        test_condition = (sibling_object_number != 0)
+        if test_condition:
+            print(f"\t\t{bcolors.WARNING}__get_sibling_of_object found object #{object_number} has sibling #{sibling_object_number}{bcolors.ENDC}")
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, True, "__get_sibling_of_object")
+
     # Get first object contained in given object, branching if this exists, i.e. is not nothing (i.e., is not 0).
     def op_code__get_child_of_object(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -543,8 +581,8 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(child_object_number, storage_target, associated_routine)
 
         test_condition = (child_object_number != 0)
-        associated_routine.next_instruction_offset = instruction.branch_target_address
-        print(f"\t\t{bcolors.WARNING}__get_child_of_object found object #{object_number} has child #{child_object_number}{bcolors.ENDC}")
+        if test_condition:
+            print(f"\t\t{bcolors.WARNING}__get_child_of_object found object #{object_number} has child #{child_object_number}{bcolors.ENDC}")
         self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, True, "__get_child_of_object")
 
     def op_code__get_parent_of_object(self, instruction, associated_routine):
@@ -617,6 +655,14 @@ class InstructionInterpreter:
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.OKCYAN}__print printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
+
+    def op_code__print_string_at_packed_address (self, instruction, associated_routine):
+        packed_address = instruction.operands[0] * 2
+        z_string_to_print = self.extractor.read_string(packed_address)
+        
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.OKCYAN}__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n{z_string_to_print}{bcolors.ENDC}")
+    
 
     def op_code__increment_and_check (self, instruction, associated_routine):
         variable_address = instruction.operands[0]

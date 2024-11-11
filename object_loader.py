@@ -14,7 +14,7 @@ class ObjectLoader:
         print(f"default_properties = {self.default_properties}")
 
     def load_objects(self):
-        objects = []
+        objects = [Object(0)]
         start_of_next_object = self.header.start_of_objects_table
         self.start_of_properties_table = self.extractor.read_word(start_of_next_object + 7)
         object_index = 1
@@ -22,6 +22,7 @@ class ObjectLoader:
         while start_of_next_object != self.start_of_properties_table:
         # while object_index < 5:
             objects.append(self.load_object(object_index, start_of_next_object))
+            print(f"object #{object_index} ({objects[-1].object_description}) has properties: {objects[-1].properties}")
             start_of_next_object += 9
             object_index += 1
         
@@ -29,11 +30,12 @@ class ObjectLoader:
 
     def load_object(self, object_index, starting_address):
         attributes = []
-        attribute_index = 0
+        attribute_index = 1
         attribute_table = self.extractor.read_bytes(starting_address, 4)
         for byte_index in range(0, 24, 8):
             byte = ((0xFF000000 >> byte_index) & attribute_table) >> 24 - byte_index
-            for bit in range(7, 0, -1):
+            # for bit in range(7, 0, -1):
+            for bit in range(0, 8, 1):
                 if (byte & (0b10000000 >> bit)) != 0:
                     attributes.append(attribute_index)
                 attribute_index += 1
@@ -83,14 +85,14 @@ class ObjectLoader:
     
 
     def load_default_properties(self):
-        default_properties = []
+        default_properties = ["Properties start at 0, this is a placeholder"]
         start_of_next_property = self.header.start_of_object_property_defaults_table
         start_of_objects_table = self.header.start_of_objects_table
         property_index = 1
 
         while start_of_next_property != start_of_objects_table:
         # while object_index < 5:
-            default_properties.append(self.extractor.read_word(start_of_next_property))
+            default_properties.append([self.extractor.read_byte(start_of_next_property), self.extractor.read_byte(start_of_next_property + 1)])
             start_of_next_property += 2
             property_index += 1
         
@@ -149,6 +151,10 @@ class ObjectLoader:
     def get_object_child(self, object_number):
         object = self.find_object(object_number)
         return object.child
+
+    def get_object_sibling(self, object_number):
+        object = self.find_object(object_number)
+        return object.sibling
 
     def get_object_property(self, object_number, property_number):
         object = self.find_object(object_number)
