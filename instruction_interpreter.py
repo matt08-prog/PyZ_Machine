@@ -163,6 +163,7 @@ class InstructionInterpreter:
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
             0x51: self.op_code__get_property,
+            0xa2: self.op_code__get_child_of_object,
             0xa3: self.op_code__get_parent_of_object,
             0x4c: self.op_code__clear_attribute,
             0x6e: self.op_code__add_object,
@@ -402,6 +403,58 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.OKCYAN}__put_prop returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
 
+
+    def branch_if_test_condition_passes(self, instruction, associated_routine, test_condition, has_storage_target, op_code_name):
+        # account for the few instructions which store a result and then possibly branch
+        if has_storage_target:
+            instruction.storage_target_address += 1
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}{op_code_name} returns False{bcolors.ENDC}")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}{op_code_name} returns True{bcolors.ENDC}")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                print(f"\t\t{bcolors.WARNING}{op_code_name} jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            # update address of next instruction
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+            print(f"\t\t{bcolors.WARNING}{op_code_name} does not branch{bcolors.ENDC}")
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            print(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            print(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        print(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        print(f"\t\ttest condition passed: {test_condition}")
+        print(f"\t\tbranch offset: {branch_offset}")
+        print(f"\t\tWill branch: {will_branch}")
+        print(f"\t\tWill return: {will_return}")
+
+
     def op_code__test_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         attribute = instruction.operands[1]
@@ -481,6 +534,18 @@ class InstructionInterpreter:
         print(f"\t\t{bcolors.WARNING}__get_property found object #{object_number} has property #{property_number} (whose value is {property_value} ({property_value:04x})){bcolors.ENDC}")
         self.routine_interpreter.store_result(property_value, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
+
+    # Get first object contained in given object, branching if this exists, i.e. is not nothing (i.e., is not 0).
+    def op_code__get_child_of_object(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        child_object_number = self.object_loader.get_object_child(object_number)
+        storage_target = instruction.storage_target
+        self.routine_interpreter.store_result(child_object_number, storage_target, associated_routine)
+
+        test_condition = (child_object_number != 0)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        print(f"\t\t{bcolors.WARNING}__get_child_of_object found object #{object_number} has child #{child_object_number}{bcolors.ENDC}")
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, True, "__get_child_of_object")
 
     def op_code__get_parent_of_object(self, instruction, associated_routine):
         object_number = instruction.operands[0]

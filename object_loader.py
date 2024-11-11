@@ -145,6 +145,10 @@ class ObjectLoader:
     def get_object_parent(self, object_number):
         object = self.find_object(object_number)
         return object.parent
+    
+    def get_object_child(self, object_number):
+        object = self.find_object(object_number)
+        return object.child
 
     def get_object_property(self, object_number, property_number):
         object = self.find_object(object_number)
