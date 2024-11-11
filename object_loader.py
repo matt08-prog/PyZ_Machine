@@ -90,3 +90,35 @@ class ObjectLoader:
                 # print(list(map(hex, obj.attribute_flags)))
                 # print(obj.attribute_flags)
                 return attribute in obj.attribute_flags
+    
+    def find_object(self, object_number):
+        for obj in self.objects:
+                if obj.object_number == object_number:
+                    return obj
+        return Object(-1)
+
+    def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):
+        # object_to_be_moved = None
+        # original_parent_of_object_to_be_moved = None
+        # original_sibling_of_object_destination = None
+
+        # object_destination = None
+        # previous_child_of_object_destination = None
+        
+        object_to_be_moved = self.find_object(index_of_object_to_be_moved)
+        original_parent_of_object_to_be_moved = self.find_object(object_to_be_moved.parent)
+        original_sibling_of_object_to_be_moved = self.find_object(object_to_be_moved.sibling)
+
+        object_destination = self.find_object(index_of_object_destination)
+        previous_child_of_object_destination = self.find_object(object_destination.child)
+
+        object_destination.child = object_to_be_moved.object_number
+        # print(f"object destination {object_destination.object_number:02x} now has child {object_to_be_moved.object_number:02x}")
+        if (previous_child_of_object_destination.object_number != -1):
+            # print(f"original object {object_to_be_moved.object_number:02x} now has sibling {previous_child_of_object_destination.object_number:02x}")
+            object_to_be_moved.sibling = previous_child_of_object_destination.object_number
+        if (original_sibling_of_object_to_be_moved.object_number != -1):
+            # print(f"original object's parent {original_parent_of_object_to_be_moved.object_number:02x} now has child {original_sibling_of_object_to_be_moved.object_number:02x}")
+            original_parent_of_object_to_be_moved.child = original_sibling_of_object_to_be_moved.object_number
+
+        

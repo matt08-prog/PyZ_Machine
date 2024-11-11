@@ -4,7 +4,7 @@ from instruction import Instruction
 # from interpreter import Interpreter
 
 class Object:
-    def __init__(self, object_number, attribute_table, p, s, c, props):
+    def __init__(self, object_number, attribute_table=[], p=0, s=0, c=0, props=[]):
         self.object_number = object_number
 
         # Attributes 0 to 31 are flags (at any given time, they are either on (1) or off (0))

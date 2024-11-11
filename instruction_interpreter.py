@@ -3,7 +3,10 @@ from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
 
-def binary_to_signed_int(binary_value): # should be moved to global variable file with helper functions
+ # should be moved to global variable file with helper functions
+ #      should also be merged with two functions below it into one function that lets you specify the number of bits
+def binary_word_16_bits_to_signed_int(binary_value):
+    print(f"\t\t\tbinary_to_signed_int")
     print(f"\t\t\t binary value: {binary_value}")
     binary_str = bin(binary_value)
     if binary_str[0] == "-":
@@ -16,7 +19,7 @@ def binary_to_signed_int(binary_value): # should be moved to global variable fil
     
     print(f"\t\t\t binary string: {binary_str}")
     # Get the length of the binary string
-    num_bits = len(binary_str)
+    num_bits = 16
     
     # Convert to integer
     num = int(binary_str, 2)
@@ -25,7 +28,60 @@ def binary_to_signed_int(binary_value): # should be moved to global variable fil
     if num & (1 << (num_bits - 1)):
         # The only time we should ever get here is if this is the first time the interpreter is looking at this value
         num -= 1 << num_bits
+    print(f"\t\t\tfinal value: {num}")
+    return num
+
+def binary_14_bits_to_signed_int(binary_value): # should be moved to global variable file with helper functions
+    print(f"\t\t\tbinary_to_signed_int")
+    print(f"\t\t\t binary value: {binary_value}")
+    binary_str = bin(binary_value)
+    if binary_str[0] == "-":
+        return binary_value
+    else:
+        binary_str = binary_str[2:]
+
+    # Remove any spaces from the binary string
+    binary_str = binary_str.replace(" ", "")
     
+    print(f"\t\t\t binary string: {binary_str}")
+    # Get the length of the binary string
+    num_bits = 14
+    
+    # Convert to integer
+    num = int(binary_str, 2)
+    
+    # If the leftmost bit is 1, it's a negative number in two's complement
+    if num & (1 << (num_bits - 1)):
+        # The only time we should ever get here is if this is the first time the interpreter is looking at this value
+        num -= 1 << num_bits
+    print(f"\t\t\tfinal value: {num}")
+    return num
+
+
+def byte_to_signed_int(binary_value): # should be moved to global variable file with helper functions
+    print(f"\t\t\tbinary_to_signed_int")
+    print(f"\t\t\t binary value: {binary_value}")
+    binary_str = bin(binary_value)
+    if binary_str[0] == "-":
+        return binary_value
+    else:
+        binary_str = binary_str[2:]
+
+    # Remove any spaces from the binary string
+    binary_str = binary_str.replace(" ", "")
+    
+    print(f"\t\t\t binary string: {binary_str}")
+    # Get the length of the binary string
+    num_bits = 14
+    
+    # Convert to integer
+    num = int(binary_str, 2)
+    
+    # If the leftmost bit is 1, it's a negative number in two's complement
+    if num & (1 << (num_bits - 1)):
+        # The only time we should ever get here is if this is the first time the interpreter is looking at this value
+        num -= 1 << num_bits
+    print(f"\t\t\tfinal value: {num}")
     return num
 
 def add_16bit_signed(a, b):
@@ -91,6 +147,7 @@ class InstructionInterpreter:
 
             0xa0: self.op_code__jump_if_zero,
             0x61: self.op_code__jump_if_equal,
+            0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
 
             0x4F: self.op_code__load_word,
@@ -101,10 +158,11 @@ class InstructionInterpreter:
             0x2d: self.op_code__store,
 
             0xe3: self.op_code__put_prop,
-
             0x4a: self.op_code__test_attribute,
+            0x6e: self.op_code__add_object,
 
             0xab: self.op_code__return,
+            0xb0: self.op_code__return_true,
 
             0xb2: self.op_code__print,
             0xe6: self.op_code__print_num,
@@ -198,7 +256,7 @@ class InstructionInterpreter:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
             elif branch_info_num_bytes == 2:
                 unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
-                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
             else:
                 raise Exception("branch info num bytes not between 1 and 2")
 
@@ -254,19 +312,20 @@ class InstructionInterpreter:
                 associated_routine.return_value = False
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns True{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns True{bcolors.ENDC}")
             elif branch_offset == 1:
                 associated_routine.return_value = True
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns false{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns false{bcolors.ENDC}")
             else:
                 will_branch = True
                 associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
-                print(f"\t\t{bcolors.WARNING}__Jump_if_equal branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_zero branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
         else:
             # update address of next instruction
             associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+            print(f"\t\t{bcolors.WARNING}__Jump_if_zero does not branch{bcolors.ENDC}")
         
         # Debug info:
         if branch_info_num_bytes == 1:
@@ -280,13 +339,13 @@ class InstructionInterpreter:
         print(f"\t\tWill return: {will_return}")
 
     def op_code__jump(self, instruction, associated_routine):
-        unsigned_branch_offset = instruction.operands[0] - 2
-        signed_branch_offset = binary_to_signed_int(unsigned_branch_offset)
+        unsigned_branch_offset = instruction.operands[0]
+        signed_branch_offset = binary_word_16_bits_to_signed_int(unsigned_branch_offset)
 
         # update address of next instruction
-        associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
+        print(f"\t\t{bcolors.WARNING}__Jump unconditional jumped to {(instruction.storage_target_address + signed_branch_offset - 2):05x} given an offset of {signed_branch_offset} - 2 = {signed_branch_offset - 2}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset - 2
         
-        print(f"\t\t{bcolors.WARNING}__Jump unconditional jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
 
     ##//*-/*-/*-/*-/*-/*-/*-/*-/*-/*- May need to look this over to ensure its implemented correctly
     # Puts whatever value is at array[word-index*2] into the given target
@@ -342,7 +401,7 @@ class InstructionInterpreter:
         object_number = instruction.operands[0]
         attribute = instruction.operands[1]
         unsigned_branch_offset = instruction.branch_target_address
-        signed_branch_offset = binary_to_signed_int(unsigned_branch_offset)
+        signed_branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)
 
         if self.object_loader.test_attribute(object_number, attribute):
             associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
@@ -351,11 +410,24 @@ class InstructionInterpreter:
             associated_routine.next_instruction_offset = instruction.branch_target_address
             print(f"\t\t{bcolors.WARNING}__test_attribute did not jump {bcolors.ENDC}")
 
+    def op_code__add_object(self, instruction, associated_routine):
+        object_to_be_moved = instruction.operands[0]
+        object_destination = instruction.operands[1]
+        self.object_loader.insert_object(object_to_be_moved, object_destination)
+        print(f"\t\t{bcolors.OKCYAN}__add_object moved object {object_to_be_moved} to {object_destination}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+
+
 
     def op_code__return(self, instruction, associated_routine):
         associated_routine.should_return = True
         associated_routine.return_value = instruction.operands[0]
-        print(f"\t\t{bcolors.OKCYAN}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.HEADER}__return returned routine with {instruction.operands[0]:02x}{bcolors.ENDC}")
+    
+    def op_code__return_true(self, instruction, associated_routine):
+        associated_routine.should_return = True
+        associated_routine.return_value = 1 # AKA True
+        print(f"\t\t{bcolors.HEADER}__return returned routine with True (AKA 1){bcolors.ENDC}")
 
     def op_code__print(self, instruction, associated_routine):
         HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
@@ -371,12 +443,75 @@ class InstructionInterpreter:
 
     
     def op_code__print_num (self, instruction, associated_routine):
-        value_to_print = binary_to_signed_int(instruction.operands[0])
+        value_to_print = byte_to_signed_int(instruction.operands[0])
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.OKCYAN}__print printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
 
+    def op_code__increment_and_check (self, instruction, associated_routine):
+        variable_address = instruction.operands[0]
+        variable_value = 0x0000
+        
+        if instruction.operand_types[0] != -1: # if the first operand was not a variable, it should be treated as one
+            variable_value = instruction.load_variable(variable_address)
+        else:
+            # The first operand was already treated like a variable
+            variable_address = instruction.original_operands[0]
+            variable_value = instruction.operands[0]
+
+        comaparitor = instruction.operands[1]
+
+        incremented_variable_value = add_16bit_signed(variable_value, 1)
+
+        self.routine_interpreter.store_result(incremented_variable_value, variable_address, associated_routine)
 
 
+
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+
+        test_condition = (incremented_variable_value > comaparitor)
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__increment_and_check returns True{bcolors.ENDC}")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__increment_and_check returns false{bcolors.ENDC}")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                print(f"\t\t{bcolors.WARNING}__increment_and_check branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            # update address of next instruction
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            print(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            print(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        print(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        print(f"\t\ttest condition passed: {test_condition}")
+        print(f"\t\tbranch offset: {branch_offset}")
+        print(f"\t\tWill branch: {will_branch}")
+        print(f"\t\tWill return: {will_return}")
 
     # def op_code__ (self, instruction, associated_routine):
