@@ -28,7 +28,8 @@ class Instruction:
         self.opcode = 0
         self.instruction_form = 1
         self.full_opcode = 0x00
-        self.long_instruction_form_ope_type_dict = {0: 1, 1: -1}
+        self.long_instruction_form_op_type_dict = {0: 1, 1: -1}
+        self.short_instruction_form_op_type_dict = {0: 2, 1: 1, 2:-1, 3: 0} # large, small, Variable, (Omitted)
         self.debug_operands = []
         self.original_operands = []
         self.operands = []
@@ -67,7 +68,7 @@ class Instruction:
             self.instruction_form = 0 # Short
             op_value = (full_opcode & 0b00110000) >> 4
             self.num_ops = self.num_ops_dict[op_value]
-            self.operand_types.append(self.num_ops_dict[op_value])
+            self.operand_types.append(self.short_instruction_form_op_type_dict[op_value])
             self.opcode = full_opcode & 0b00001111
         
         else:
@@ -75,8 +76,8 @@ class Instruction:
             op_value = (full_opcode & 0b00110000) >> 4
             self.num_ops = 2
             self.operand_types = [
-                self.long_instruction_form_ope_type_dict[(full_opcode & 0b01000000) >> 6], 
-                self.long_instruction_form_ope_type_dict[(full_opcode & 0b00100000) >> 5]]
+                self.long_instruction_form_op_type_dict[(full_opcode & 0b01000000) >> 6], 
+                self.long_instruction_form_op_type_dict[(full_opcode & 0b00100000) >> 5]]
             self.opcode = full_opcode & 0b00011111
 
         self.full_opcode = full_opcode

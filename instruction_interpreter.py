@@ -158,9 +158,12 @@ class InstructionInterpreter:
             0x2d: self.op_code__store,
 
             0xe3: self.op_code__put_prop,
+            0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
+            0x4c: self.op_code__clear_attribute,
             0x6e: self.op_code__add_object,
+            0xaa: self.op_code__print_object,
 
             0xab: self.op_code__return,
             0xb0: self.op_code__return_true,
@@ -418,14 +421,39 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.WARNING}__set_attribute ensured object #{object_number} had attribute #{attribute}{bcolors.ENDC}")
 
+    def op_code__clear_attribute(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        attribute = instruction.operands[1]
+        self.object_loader.remove_attribute(object_number, attribute)
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.WARNING}__clear_attribute ensured object #{object_number} does not have attribute #{attribute}{bcolors.ENDC}")
+
+    def op_code__jump_if_object_a_is_direct_child_of_object_b(self, instruction, associated_routine):
+        object_a_number = instruction.operands[0]
+        object_b_number = instruction.operands[0]
+        unsigned_branch_offset = instruction.branch_target_address
+        signed_branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)
+
+        if self.object_loader.is_obj_a_the_direct_child_of_obj_b(object_a_number, object_b_number):
+            associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
+            print(f"\t\t{bcolors.WARNING}__jump_if_object_a_is_direct_child_of_object_b jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        else:
+            associated_routine.next_instruction_offset = instruction.branch_target_address
+            print(f"\t\t{bcolors.WARNING}__jump_if_object_a_is_direct_child_of_object_b did not jump {bcolors.ENDC}")
+
     def op_code__add_object(self, instruction, associated_routine):
         object_to_be_moved = instruction.operands[0]
         object_destination = instruction.operands[1]
         self.object_loader.insert_object(object_to_be_moved, object_destination)
-        print(f"\t\t{bcolors.OKCYAN}__add_object moved object {object_to_be_moved} to {object_destination}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}__add_object moved object {object_to_be_moved} to {object_destination}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
+    def op_code__print_object (self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        object_description = self.object_loader.get_object_description(object_number)
 
+        print(f"\t\t{bcolors.OKCYAN}__print_object printed object #{object_number} as: {object_description}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address
 
     def op_code__return(self, instruction, associated_routine):
         associated_routine.should_return = True

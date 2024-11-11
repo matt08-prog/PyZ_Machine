@@ -45,10 +45,11 @@ class ObjectLoader:
         
         property_header = self.load_property_header(property_header_address)
         property_address = property_header["final_address"]
+        object_description = property_header["object_description"]
         properties = self.load_properties(property_address)
 
 
-        z_object = Object(object_index, attributes, parent_obj_num, sibling_obj_num, child_obj_num, properties)
+        z_object = Object(object_index, attributes, parent_obj_num, sibling_obj_num, child_obj_num, properties, object_description)
 
         return z_object
 
@@ -57,7 +58,7 @@ class ObjectLoader:
         description = self.extractor.read_string(starting_address + 1)
         final_address = starting_address + (num_descirption_words * 2) + 1
         # print(description)
-        return {"final_address": final_address}
+        return {"final_address": final_address, "object_description": description}
 
     def load_properties(self, starting_address):
         properties = []
@@ -100,12 +101,29 @@ class ObjectLoader:
         else:
             print(f"Object #{object_number} does not exist, now exiting")
             exit(-1)
+    
+    def remove_attribute(self, object_number, attribute):
+        object_to_set_attribute = self.find_object(object_number)
+        if object_to_set_attribute.object_number != -1:
+            # print(object_to_set_attribute.attribute_flags)
+            if attribute in object_to_set_attribute.attribute_flags:
+                object_to_set_attribute.attribute_flags.remove(attribute)
+        else:
+            print(f"Object #{object_number} does not exist, now exiting")
+            exit(-1)
+    
+    def is_obj_a_the_direct_child_of_obj_b(self,obj_a_number, obj_b_number):
+        return(self.find_object(obj_a_number).parent == obj_b_number)
 
     def find_object(self, object_number):
         for obj in self.objects:
                 if obj.object_number == object_number:
                     return obj
         return Object(-1)
+
+    def get_object_description(self, object_number):
+        object = self.find_object(object_number)
+        return object.object_description
 
     def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):
         # object_to_be_moved = None

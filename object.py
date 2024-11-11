@@ -4,7 +4,7 @@ from instruction import Instruction
 # from interpreter import Interpreter
 
 class Object:
-    def __init__(self, object_number, attribute_table=[], p=0, s=0, c=0, props=[]):
+    def __init__(self, object_number, attribute_table=[], p=0, s=0, c=0, props=[], object_description=""):
         self.object_number = object_number
 
         # Attributes 0 to 31 are flags (at any given time, they are either on (1) or off (0))
@@ -14,6 +14,7 @@ class Object:
         self.sibling = s # object number
         self.child = c # object number
         self.properties = props
+        self.object_description = object_description # string
 
         self.properties_table = []
         # print(f"object_number: {object_number} has attributes: {attribute_table}")
