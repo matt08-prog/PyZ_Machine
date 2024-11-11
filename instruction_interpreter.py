@@ -87,6 +87,8 @@ class InstructionInterpreter:
 
             0x55: self.op_cod__sub,
 
+            0xc9: self.op_code__and,
+
             0xa0: self.op_code__jump_if_zero,
             0x61: self.op_code__jump_if_equal,
             0x8c: self.op_code__jump,
@@ -105,6 +107,7 @@ class InstructionInterpreter:
             0xab: self.op_code__return,
 
             0xb2: self.op_code__print,
+            0xe6: self.op_code__print_num,
             0xbb: self.op_code__new_line
             }
         
@@ -170,6 +173,12 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
         print(f"\t\t{bcolors.WARNING}__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference:04x} into {result_storage_target:04x}{bcolors.ENDC}")
 
+    def op_code__and (self, instruction, associated_routine):
+        result_to_store = instruction.operands[0] & instruction.operands[1]
+
+        self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        print(f"\t\t{bcolors.OKCYAN}__new_line\n{bcolors.ENDC}")
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
         if len(instruction.operands) > 2 or len(instruction.operands) < 2:
@@ -283,9 +292,11 @@ class InstructionInterpreter:
     # Puts whatever value is at array[word-index*2] into the given target
     def op_code__load_word(self, instruction, associated_routine):
         # operand 0 is the start of array and operand 1 is the index of the array
-        result_to_store = instruction.operands[0] + 2 * instruction.operands[1]
+        address_to_fetch = instruction.operands[0] + 2 * instruction.operands[1]
+        result_to_store = self.extractor.read_byte(address_to_fetch)
+        
         self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
-        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} froma address {address_to_fetch:05x} into {instruction.storage_target:02x}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address + 1
 
     # Writes "value" to dynamic_memory[array[2*word-index]]
@@ -358,4 +369,14 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.OKCYAN}__new_line\n{bcolors.ENDC}")
 
-    # (self, instruction, associated_routine):
+    
+    def op_code__print_num (self, instruction, associated_routine):
+        value_to_print = binary_to_signed_int(instruction.operands[0])
+        
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.OKCYAN}__print printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
+
+
+
+
+    # def op_code__ (self, instruction, associated_routine):

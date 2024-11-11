@@ -44,8 +44,8 @@ class HexExtractor:
         if (int.bit_length(word_to_store) > 16):
             print(f"{bcolors.FAIL}The word ({word_to_store:04x}) trying to be written to memory ({address:05x}) is not 16-bits long{bcolors.ENDC}")
             exit(-1)
-        self.hex_data[address] = (word_to_store & 0xFF00) >> 8
-        self.hex_data[address + 1] = (word_to_store & 0x00FF)
+        self.hex_data[address] = [address, hex((word_to_store & 0xFF00) >> 8)] # should follow hex_data pattern ?
+        self.hex_data[address + 1] = [address, hex(word_to_store & 0x00FF)]
         print(f"\t\t{bcolors.OKBLUE}The word ({word_to_store:04x}) was written to address ({address:05x}){bcolors.ENDC}")
 
     
