@@ -10,6 +10,8 @@ class ObjectLoader:
         self.header = header
         self.start_of_properties_table = 0x00
         self.objects = self.load_objects()
+        self.default_properties = self.load_default_properties()
+        print(f"default_properties = {self.default_properties}")
 
     def load_objects(self):
         objects = []
@@ -78,6 +80,21 @@ class ObjectLoader:
             # print(f"prop_num: {property_number}")
             property_index += num_property_bytes + 1 
         return properties
+    
+
+    def load_default_properties(self):
+        default_properties = []
+        start_of_next_property = self.header.start_of_object_property_defaults_table
+        start_of_objects_table = self.header.start_of_objects_table
+        property_index = 1
+
+        while start_of_next_property != start_of_objects_table:
+        # while object_index < 5:
+            default_properties.append(self.extractor.read_word(start_of_next_property))
+            start_of_next_property += 2
+            property_index += 1
+        
+        return default_properties
 
     def put_value_in_property(self, object_number, property_number, value):
         for obj in self.objects:
@@ -128,6 +145,13 @@ class ObjectLoader:
     def get_object_parent(self, object_number):
         object = self.find_object(object_number)
         return object.parent
+
+    def get_object_property(self, object_number, property_number):
+        object = self.find_object(object_number)
+        property = object.get_property(property_number)
+        if property == -1:
+            property = self.default_properties[property_number]
+        return property
 
     def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):
         # object_to_be_moved = None

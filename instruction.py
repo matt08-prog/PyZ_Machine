@@ -94,6 +94,9 @@ class Instruction:
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
             print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x} ({load_target - 0x10})){bcolors.ENDC}")
             return self.routine_interpreter.global_vars[load_target - 0x10]
+        else:
+            print(f"\t\t{bcolors.FAIL}load variable {load_target} is out of bounds{bcolors.ENDC}")
+            exit(-1)
 
     def load_operands(self, initial_operand_offset):
         operand_offset = initial_operand_offset

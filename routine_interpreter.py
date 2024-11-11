@@ -98,3 +98,6 @@ class RoutineInterpreter:
             elif (storage_target > 0x0f and storage_target < 0x100): # 0x10 to 0xff are meant for global_vars
                 self.global_vars[storage_target - 0x10] = result_to_store
                 print(f"\t\t{bcolors.OKGREEN}{result_to_store:02x} placed in global var {storage_target - 0x10}{bcolors.ENDC}")
+            else:
+                print(f"\t\t{bcolors.OKGREEN}Storage target {storage_target} is out of bounds!{bcolors.ENDC}")
+                exit(-1)

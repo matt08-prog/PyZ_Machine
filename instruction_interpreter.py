@@ -161,6 +161,7 @@ class InstructionInterpreter:
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
+            0x51: self.op_code__get_property,
             0xa3: self.op_code__get_parent_of_object,
             0x4c: self.op_code__clear_attribute,
             0x6e: self.op_code__add_object,
@@ -459,12 +460,21 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.WARNING}__set_attribute ensured object #{object_number} had attribute #{attribute}{bcolors.ENDC}")
 
+    def op_code__get_property(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        property_number = instruction.operands[1]
+        property_value = self.object_loader.get_object_property(object_number, property_number)
+        storage_target = instruction.storage_target
+        self.routine_interpreter.store_result(property_value, storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        print(f"\t\t{bcolors.WARNING}__get_property found object #{object_number} has property #{property_number} (whose value is {property_value}){bcolors.ENDC}")
+
     def op_code__get_parent_of_object(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         parent_object_number = self.object_loader.get_object_parent(object_number)
-        associated_routine.next_instruction_offset = instruction.branch_target_address
-        storage_target = instruction.storage_target_address
+        storage_target = instruction.storage_target
         self.routine_interpreter.store_result(parent_object_number, storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
         print(f"\t\t{bcolors.WARNING}__get_parent_of_object found object #{object_number} has parent #{parent_object_number}{bcolors.ENDC}")
 
     def op_code__clear_attribute(self, instruction, associated_routine):

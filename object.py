@@ -33,7 +33,14 @@ class Object:
         if not object_has_given_property:
             raise Exception(f"Object number {self.object_number}: does not have {property_number}, halting execution")
 
-    
+    def get_property(self, property_number):
+        property_value = -1
+        for property in self.properties:
+            if property["property_number"] == property_number:
+                property_value = property["property_data"]
+
+        return property_value
+
     # def load_property(self, starting_address):
     #     property = {}
     #     size_byte = self.extractor.read_byte(starting_address + property_offset)
