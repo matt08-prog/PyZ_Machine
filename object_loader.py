@@ -125,6 +125,10 @@ class ObjectLoader:
         object = self.find_object(object_number)
         return object.object_description
 
+    def get_object_parent(self, object_number):
+        object = self.find_object(object_number)
+        return object.parent
+
     def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):
         # object_to_be_moved = None
         # original_parent_of_object_to_be_moved = None

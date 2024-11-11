@@ -161,6 +161,7 @@ class InstructionInterpreter:
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
+            0xa3: self.op_code__get_parent_of_object,
             0x4c: self.op_code__clear_attribute,
             0x6e: self.op_code__add_object,
             0xaa: self.op_code__print_object,
@@ -390,8 +391,6 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.WARNING}__store stored {value_to_store:02x} into {variable_store_destination:05x}{bcolors.ENDC}")
 
-
-
     def op_code__put_prop(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         property_number = instruction.operands[1]
@@ -404,15 +403,54 @@ class InstructionInterpreter:
     def op_code__test_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         attribute = instruction.operands[1]
-        unsigned_branch_offset = instruction.branch_target_address
-        signed_branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)
 
-        if self.object_loader.test_attribute(object_number, attribute):
-            associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
-            print(f"\t\t{bcolors.WARNING}__test_attribute jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+
+        test_condition = self.object_loader.test_attribute(object_number, attribute)
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__test_attribute returns True{bcolors.ENDC}")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                print(f"\t\t{bcolors.WARNING}__test_attribute returns false{bcolors.ENDC}")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                print(f"\t\t{bcolors.WARNING}__test_attribute jumped to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
         else:
-            associated_routine.next_instruction_offset = instruction.branch_target_address
-            print(f"\t\t{bcolors.WARNING}__test_attribute did not jump {bcolors.ENDC}")
+            # update address of next instruction
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+            print(f"\t\t{bcolors.WARNING}__test_attribute does not branch{bcolors.ENDC}")
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            print(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            print(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        print(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        print(f"\t\ttest condition passed: {test_condition}")
+        print(f"\t\tbranch offset: {branch_offset}")
+        print(f"\t\tWill branch: {will_branch}")
+        print(f"\t\tWill return: {will_return}")
     
     def op_code__set_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -420,6 +458,14 @@ class InstructionInterpreter:
         self.object_loader.set_attribute(object_number, attribute)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         print(f"\t\t{bcolors.WARNING}__set_attribute ensured object #{object_number} had attribute #{attribute}{bcolors.ENDC}")
+
+    def op_code__get_parent_of_object(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        parent_object_number = self.object_loader.get_object_parent(object_number)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        storage_target = instruction.storage_target_address
+        self.routine_interpreter.store_result(parent_object_number, storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__get_parent_of_object found object #{object_number} has parent #{parent_object_number}{bcolors.ENDC}")
 
     def op_code__clear_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -452,7 +498,7 @@ class InstructionInterpreter:
         object_number = instruction.operands[0]
         object_description = self.object_loader.get_object_description(object_number)
 
-        print(f"\t\t{bcolors.OKCYAN}__print_object printed object #{object_number} as: {object_description}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.OKCYAN}__print_object printed object #{object_number} as: \n{object_description[0]}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
     def op_code__return(self, instruction, associated_routine):
