@@ -159,6 +159,7 @@ class InstructionInterpreter:
 
             0xe3: self.op_code__put_prop,
             0x4a: self.op_code__test_attribute,
+            0x4b: self.op_code__set_attribute,
             0x6e: self.op_code__add_object,
 
             0xab: self.op_code__return,
@@ -409,6 +410,13 @@ class InstructionInterpreter:
         else:
             associated_routine.next_instruction_offset = instruction.branch_target_address
             print(f"\t\t{bcolors.WARNING}__test_attribute did not jump {bcolors.ENDC}")
+    
+    def op_code__set_attribute(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        attribute = instruction.operands[1]
+        self.object_loader.set_attribute(object_number, attribute)
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.WARNING}__set_attribute ensured object #{object_number} had attribute #{attribute}{bcolors.ENDC}")
 
     def op_code__add_object(self, instruction, associated_routine):
         object_to_be_moved = instruction.operands[0]

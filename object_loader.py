@@ -91,6 +91,16 @@ class ObjectLoader:
                 # print(obj.attribute_flags)
                 return attribute in obj.attribute_flags
     
+    def set_attribute(self, object_number, attribute):
+        object_to_set_attribute = self.find_object(object_number)
+        if object_to_set_attribute.object_number != -1:
+            # print(object_to_set_attribute.attribute_flags)
+            if attribute not in object_to_set_attribute.attribute_flags:
+                object_to_set_attribute.attribute_flags.append(attribute)
+        else:
+            print(f"Object #{object_number} does not exist, now exiting")
+            exit(-1)
+
     def find_object(self, object_number):
         for obj in self.objects:
                 if obj.object_number == object_number:
