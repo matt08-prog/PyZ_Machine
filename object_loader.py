@@ -151,6 +151,7 @@ class ObjectLoader:
         property = object.get_property(property_number)
         if property == -1:
             property = self.default_properties[property_number]
+            # may need to turn the default properties into an array
         return property
 
     def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):

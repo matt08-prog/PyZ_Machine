@@ -147,6 +147,7 @@ class InstructionInterpreter:
 
             0xa0: self.op_code__jump_if_zero,
             0x61: self.op_code__jump_if_equal,
+            0x41: self.op_code__jump_if_equal,
             0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
 
@@ -270,12 +271,12 @@ class InstructionInterpreter:
                 associated_routine.return_value = False
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns True{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns False{bcolors.ENDC}")
             elif branch_offset == 1:
                 associated_routine.return_value = True
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns false{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_equal returns True{bcolors.ENDC}")
             else:
                 will_branch = True
                 associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
@@ -310,7 +311,7 @@ class InstructionInterpreter:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
             elif branch_info_num_bytes == 2:
                 unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
-                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
             else:
                 raise Exception("branch info num bytes not between 1 and 2")
 
@@ -318,12 +319,12 @@ class InstructionInterpreter:
                 associated_routine.return_value = False
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns True{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns False{bcolors.ENDC}")
             elif branch_offset == 1:
                 associated_routine.return_value = True
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns false{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__Jump_if_zero returns True{bcolors.ENDC}")
             else:
                 will_branch = True
                 associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
@@ -427,12 +428,12 @@ class InstructionInterpreter:
                 associated_routine.return_value = False
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__test_attribute returns True{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__test_attribute returns False{bcolors.ENDC}")
             elif branch_offset == 1:
                 associated_routine.return_value = True
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__test_attribute returns false{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__test_attribute returns True{bcolors.ENDC}")
             else:
                 will_branch = True
                 associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
@@ -463,11 +464,23 @@ class InstructionInterpreter:
     def op_code__get_property(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         property_number = instruction.operands[1]
-        property_value = self.object_loader.get_object_property(object_number, property_number)
+        property_data_array = self.object_loader.get_object_property(object_number, property_number)
+        property_value = 0
+
+        if len(property_data_array) == 1:
+            property_value = property_data_array[0]
+        else:
+            property_value = (property_data_array[0] << 8) | property_data_array[1]
+
         storage_target = instruction.storage_target
+
+        if (len(property_data_array) not in [1, 2]):
+            print(f"\t\t{bcolors.FAIL}property #{property_number} (whose value is {property_value} has an erroneous length of {len(property_value)}){bcolors.ENDC}")
+            exit(-1)
+
+        print(f"\t\t{bcolors.WARNING}__get_property found object #{object_number} has property #{property_number} (whose value is {property_value} ({property_value:04x})){bcolors.ENDC}")
         self.routine_interpreter.store_result(property_value, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
-        print(f"\t\t{bcolors.WARNING}__get_property found object #{object_number} has property #{property_number} (whose value is {property_value}){bcolors.ENDC}")
 
     def op_code__get_parent_of_object(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -573,7 +586,7 @@ class InstructionInterpreter:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
             elif branch_info_num_bytes == 2:
                 unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
-                branch_offset = binary_to_signed_int(unsigned_branch_offset)# treat value as signed
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
             else:
                 raise Exception("branch info num bytes not between 1 and 2")
 
@@ -581,12 +594,12 @@ class InstructionInterpreter:
                 associated_routine.return_value = False
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__increment_and_check returns True{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__increment_and_check returns False{bcolors.ENDC}")
             elif branch_offset == 1:
                 associated_routine.return_value = True
                 associated_routine.should_return = True
                 will_return = True
-                print(f"\t\t{bcolors.WARNING}__increment_and_check returns false{bcolors.ENDC}")
+                print(f"\t\t{bcolors.WARNING}__increment_and_check returns True{bcolors.ENDC}")
             else:
                 will_branch = True
                 associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
