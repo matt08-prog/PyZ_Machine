@@ -1,6 +1,6 @@
 # instruction.py
 from hex_extractor import HexExtractor
-
+from debuger import debug
 
 class bcolors:
     HEADER = '\033[95m'
@@ -86,16 +86,16 @@ class Instruction:
     
     def load_variable(self, load_target):
         if (load_target == 0x00):
-            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.stack[-1]:02x}) from top of stack{bcolors.ENDC}")
+            debug(f"\t\tload ({self.routine_interpreter.stack[-1]:02x}) from top of stack", "FAIL")
             return self.routine_interpreter.stack[-1]
         elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
-            print(f"\t\t{bcolors.FAIL}load ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x}){bcolors.ENDC}")
+            debug(f"\t\tload ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x})", "FAIL")
             return self.current_routine.local_vars[load_target - 1]
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
-            print(f"\t\t{bcolors.FAIL}load ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x} ({load_target - 0x10})){bcolors.ENDC}")
+            debug(f"\t\tload ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var ({(load_target - 0x10):02x} ({load_target - 0x10}))", "FAIL")
             return self.routine_interpreter.global_vars[load_target - 0x10]
         else:
-            print(f"\t\t{bcolors.FAIL}load variable {load_target} is out of bounds{bcolors.ENDC}")
+            debug(f"\t\tload variable {load_target} is out of bounds", "FAIL")
             exit(-1)
 
     def load_operands(self, initial_operand_offset):

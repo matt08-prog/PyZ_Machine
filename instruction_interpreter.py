@@ -643,12 +643,12 @@ class InstructionInterpreter:
     def op_code__return(self, instruction, associated_routine):
         associated_routine.should_return = True
         associated_routine.return_value = instruction.operands[0]
-        debug(f"\t\t{bcolors.HEADER}__return returned routine with {instruction.operands[0]:02x}")
+        debug(f"\t\t__return returned routine with {instruction.operands[0]:02x}", "HEADER")
     
     def op_code__return_true(self, instruction, associated_routine):
         associated_routine.should_return = True
         associated_routine.return_value = 1 # AKA True
-        debug(f"\t\t{bcolors.HEADER}__return returned routine with True (AKA 1)")
+        debug(f"\t\t__return returned routine with True (AKA 1)", "HEADER")
 
     def op_code__print(self, instruction, associated_routine):
         HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
@@ -660,7 +660,7 @@ class InstructionInterpreter:
 
     def op_code__new_line(self, instruction, associated_routine):
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__new_line\n")
+        debug(f"\t\t__new_line\n", "CYAN")
 
     
     def op_code__print_num (self, instruction, associated_routine):

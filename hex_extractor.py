@@ -48,7 +48,7 @@ class HexExtractor:
             exit(-1)
         self.hex_data[address] = [address, hex((word_to_store & 0xFF00) >> 8)] # should follow hex_data pattern ?
         self.hex_data[address + 1] = [address, hex(word_to_store & 0x00FF)]
-        print(f"\t\t{bcolors.OKBLUE}The word ({word_to_store:04x}) was written to address ({address:05x}){bcolors.ENDC}")
+        debug(f"\t\tThe word ({word_to_store:04x}) was written to address ({address:05x})", "OKBLUE")
 
     
     # returns decimal value of word at given address

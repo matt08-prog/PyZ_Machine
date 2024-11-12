@@ -22,7 +22,7 @@ class ObjectLoader:
         while start_of_next_object != self.start_of_properties_table:
         # while object_index < 5:
             objects.append(self.load_object(object_index, start_of_next_object))
-            print(f"object #{object_index} ({objects[-1].object_description}) has properties: {objects[-1].properties}")
+            # print(f"object #{object_index} ({objects[-1].object_description}) has properties: {objects[-1].properties}")
             start_of_next_object += 9
             object_index += 1
         
@@ -103,7 +103,7 @@ class ObjectLoader:
             if obj.object_number == object_number:
                 obj.put_value_in_property(property_number, value)
                 break
-        
+    
     def test_attribute(self, object_number, attribute):
         for obj in self.objects:
             if  obj.object_number == object_number:

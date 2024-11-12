@@ -3,6 +3,7 @@ from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
 from instruction_interpreter import InstructionInterpreter
+from debuger import debug
 
 def binary_to_signed_int(binary_str): # should be moved to global variable file with helper functions
     # Remove any spaces from the binary string
@@ -52,20 +53,21 @@ class RoutineInterpreter:
     def start_interpreting(self):
         starting_routine_address_from_header = self.header.initial_execution_point - 1
         starting_routine = Routine(self.extractor, starting_routine_address_from_header, [], self)
-        print(f"first routine's address: {starting_routine_address_from_header}")
-        print(f"routine's local vars: {starting_routine.local_vars}")
+        debug(f"first routine's address: {starting_routine_address_from_header}")
+        debug(f"routine's local vars: {starting_routine.local_vars}")
         self.run_routine(starting_routine) # This starting routine should never return a value
     
     def run_routine(self, routine):
         # print(f"number of local vars: {routine.num_local_vars}")
-        print(f"routine's local vars: {list(map(hex, routine.local_vars))}")
+        debug(f"routine's local vars: {list(map(hex, routine.local_vars))}")
         while True:
             self.time_stamp += 1
             if self.time_stamp > self.max_time_step:
                 # debug exit, otherwise it tries to return from all routines at end of simulation
                 exit(-1)
             next_instruction = routine.read_next_instruction()
-            print(f"time-{self.time_stamp} routine's next instruction address: {routine.next_instruction_offset:02x}")
+            print(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address")
+            # debug(f"{routine.next_instruction_offset:02x}", "time-stamp")
             print(f"\tinstruction_form: {self.debug_instruction_form_dict[next_instruction.instruction_form]}")
             # print(f"\tnum_ops: {next_instruction.num_ops}")
             # print(f"\topcode: {next_instruction.opcode}")
@@ -89,15 +91,15 @@ class RoutineInterpreter:
     def store_result(self, result_to_store, storage_target, current_routine):
             if (storage_target == 0x00):
                 self.stack.append(result_to_store)
-                print(f"\t\t{bcolors.OKGREEN}Pushed {result_to_store:02x} onto the stack{bcolors.ENDC}")
+                debug(f"\t\tPushed {result_to_store:02x} onto the stack", "GREEN")
 
             elif (storage_target > 0x00 and storage_target < 0x10): # 0x01 to 0xf0 are meant for local vars
                 current_routine.local_vars[storage_target - 1] = result_to_store
-                print(f"\t\t{bcolors.OKGREEN}{result_to_store:02x} placed in local var {storage_target - 1}{bcolors.ENDC}")
+                debug(f"\t\t{result_to_store:02x} placed in local var {storage_target - 1}", "GREEN")
 
             elif (storage_target > 0x0f and storage_target < 0x100): # 0x10 to 0xff are meant for global_vars
                 self.global_vars[storage_target - 0x10] = result_to_store
-                print(f"\t\t{bcolors.OKGREEN}{result_to_store:02x} placed in global var {storage_target - 0x10}{bcolors.ENDC}")
+                debug(f"\t\t{result_to_store:02x} placed in global var {storage_target - 0x10}", "GREEN")
             else:
-                print(f"\t\t{bcolors.OKGREEN}Storage target {storage_target} is out of bounds!{bcolors.ENDC}")
+                debug(f"\t\tStorage target {storage_target} is out of bounds!", "GREEN")
                 exit(-1)

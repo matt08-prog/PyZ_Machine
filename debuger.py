@@ -9,6 +9,7 @@ bcolors = {
     "ENDC": '\033[0m',
     "BOLD": '\033[1m',
     "UNDERLINE": '\033[4m'
+    # "time-stamp": '\033[4m'
 }
 
 used_debug_colors = ["HEADER",
@@ -34,4 +35,6 @@ used_debug_colors = ["HEADER",
 def debug(debug_string, severity_string="unclassified_severity"):
     if (severity_string != "unclassified_severity") and (severity_string in used_debug_colors):
         print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}")
+    # if (severity_string == "time-stamp"):
+    #     print(f"{debug_string}")
 
