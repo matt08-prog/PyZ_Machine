@@ -11,6 +11,8 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+from debuger import debug
+
 class HexExtractor:
     def __init__(self, file_path, hex_data, abreviator):
         self.file_path = file_path
@@ -69,7 +71,6 @@ class HexExtractor:
             byte = self.read_byte(address + i)
             result.append(byte)
         return result
-        
 
     def load_abreviator(self, abreviator_table):
         self.abreviator_table = abreviator_table

@@ -20,9 +20,9 @@ class Abreviator:
             self.abreviations_table.append(abreviation)
             # print(f"    abreviation: \"{abreviation}\"")
             address_index += 1
-        print(f"self.abreviations_table: {self.abreviations_table}")
+        # print(f"self.abreviations_table: {self.abreviations_table}")
     
     def print_abreviations(self):
         for address_index in range(len(self.abreviation_addresses)):
             abreviation_address = self.abreviation_addresses[address_index]
-            print(f"address of abreviation {address_index}: {abreviation_address} ({abreviation_address:02x})")
+            # print(f"address of abreviation {address_index}: {abreviation_address} ({abreviation_address:02x})")
