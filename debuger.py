@@ -32,7 +32,7 @@ used_debug_colors = ["HEADER",
 #     "BOLD",
 #     "UNDERLINE"]
 
-instructions_only = True
+instructions_only = False
 
 def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
     if instructions_only:

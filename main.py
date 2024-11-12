@@ -47,7 +47,7 @@ def main():
     header = Header(hex_data, extractor)
     abreviator.load_abreivations(extractor, header)
     objectLoader = ObjectLoader(extractor, header)
-    print()
+    # print()
     routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator)
     # extractor.load_abreviator(abreviator.abreviations_table)
 

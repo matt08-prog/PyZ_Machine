@@ -482,14 +482,14 @@ class InstructionInterpreter:
         
         # Debug info:
         if branch_info_num_bytes == 1:
-            debug(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+            debug(f"\t\tbranch info byte: {instruction.storage_target:02x}", "debug")
         else:
-            debug(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
-        debug(f"\t\tbranch condition inverted: {invert_branch_condition}")
-        debug(f"\t\ttest condition passed: {test_condition}")
-        debug(f"\t\tbranch offset: {branch_offset}")
-        debug(f"\t\tWill branch: {will_branch}")
-        debug(f"\t\tWill return: {will_return}")
+            debug(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}", "debug")
+        debug(f"\t\tbranch condition inverted: {invert_branch_condition}", "debug")
+        debug(f"\t\ttest condition passed: {test_condition}", "debug")
+        debug(f"\t\tbranch offset: {branch_offset}", "debug")
+        debug(f"\t\tWill branch: {will_branch}", "debug")
+        debug(f"\t\tWill return: {will_return}", "debug")
 
 
     def op_code__test_attribute(self, instruction, associated_routine):
@@ -615,15 +615,13 @@ class InstructionInterpreter:
     def op_code__jump_if_object_a_is_direct_child_of_object_b(self, instruction, associated_routine):
         object_a_number = instruction.operands[0]
         object_b_number = instruction.operands[1]
-        unsigned_branch_offset = instruction.branch_target_address
-        signed_branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)
 
-        if self.object_loader.is_obj_a_the_direct_child_of_obj_b(object_a_number, object_b_number):
-            associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset
-            debug(f"\t\t__jump_if_object_a_is_direct_child_of_object_b jumped to {associated_routine.next_instruction_offset:05x}", "WARNING")
+        test_condition = self.object_loader.is_obj_a_the_direct_child_of_obj_b(object_a_number, object_b_number)
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, False, "__jump_if_object_a_is_direct_child_of_object_b")
+        if test_condition:
+            debug(f"\t\tobject #{object_a_number} is the direct child of object #{object_b_number} ", "WARNING")
         else:
-            associated_routine.next_instruction_offset = instruction.branch_target_address
-            debug(f"\t\t__jump_if_object_a_is_direct_child_of_object_b did not jump because object #{object_a_number} is not the direct child of object #{object_b_number} ", "WARNING")
+            debug(f"\t\tobject #{object_a_number} is not the direct child of object #{object_b_number} ", "WARNING")
 
     def op_code__add_object(self, instruction, associated_routine):
         object_to_be_moved = instruction.operands[0]
