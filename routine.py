@@ -10,7 +10,9 @@ class Routine:
         self.routine_interpreter = routine_interpreter
         self.num_local_vars = 0
         self.local_vars = self.read_routine_header()
-        self.load_in_passed_arguments(passed_arguments)
+        # print(f"routine ({initial_address:05x}) local vars: {self.local_vars}")
+        if passed_arguments != []:
+            self.load_in_passed_arguments(passed_arguments)
         self.next_instruction_offset = initial_address + 1 + (len(self.local_vars) * 2)
         self.should_return = False
         self.return_value = False
@@ -18,8 +20,9 @@ class Routine:
     def read_routine_header(self):
         self.num_local_vars = self.extractor.read_byte(self.initial_address)
         local_vars = []
+        start_of_local_variables = self.initial_address + 1
         for local_var_index in range(0, self.num_local_vars*2, 2):
-            local_vars.append(self.extractor.read_word(self.initial_address + local_var_index))
+            local_vars.append(self.extractor.read_word(start_of_local_variables + local_var_index))
         return local_vars
     
     def load_in_passed_arguments(self, passed_arguments):

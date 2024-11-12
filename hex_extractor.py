@@ -74,6 +74,12 @@ class HexExtractor:
     def load_abreviator(self, abreviator_table):
         self.abreviator_table = abreviator_table
 
+    def read_char(self, character_code):
+        if character_code > 31 and character_code < 127:
+            return chr(character_code)
+        else:
+            return "__unknown ZSCII character, may not yet be implemented__"
+
     def read_string(self, base_address, abreviations_table=None):
         current_address = base_address
         current_alphabet = 0 # A0 = lowercase, A1 = Uppercase, A2 = punctuation

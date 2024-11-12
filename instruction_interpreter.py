@@ -153,6 +153,7 @@ class InstructionInterpreter:
             0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
 
+            0x30: self.op_code__load_byte,
             0x4F: self.op_code__load_word,
             0x0F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
@@ -176,6 +177,7 @@ class InstructionInterpreter:
             0xb0: self.op_code__return_true,
 
             0xb2: self.op_code__print,
+            0xe5: self.op_code__print_char,
             0xe6: self.op_code__print_num,
             0xad: self.op_code__print_string_at_packed_address,
             0xbb: self.op_code__new_line
@@ -200,9 +202,9 @@ class InstructionInterpreter:
 
     def op_code__call(self, instruction, associated_routine):
         routine_to_call = instruction.operands[0] * 2
-        print(f"\t\t{bcolors.WARNING}__call instruction calls routine ({routine_to_call:05x}){bcolors.ENDC}")
 
         operands_to_pass_on = instruction.operands[1:]
+        print(f"\t\t{bcolors.WARNING}__call instruction calls routine ({routine_to_call:05x}), with operands ({operands_to_pass_on}){bcolors.ENDC}")
         # result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
         called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on, self.routine_interpreter)
 
@@ -248,7 +250,7 @@ class InstructionInterpreter:
 
         self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
-        print(f"\t\t{bcolors.OKCYAN}__new_line\n{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}op_code__and placed result ({instruction.operands[0]:04x} & {instruction.operands[1]:04x} = {result_to_store:04x} ({result_to_store})) in address {instruction.storage_target:05x}{bcolors.ENDC}")
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
         if len(instruction.operands) > 3 or len(instruction.operands) < 2:
@@ -374,15 +376,24 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address + signed_branch_offset - 2
         
 
-    ##//*-/*-/*-/*-/*-/*-/*-/*-/*-/*- May need to look this over to ensure its implemented correctly
     # Puts whatever value is at array[word-index*2] into the given target
     def op_code__load_word(self, instruction, associated_routine):
         # operand 0 is the start of array and operand 1 is the index of the array
         address_to_fetch = instruction.operands[0] + 2 * instruction.operands[1]
+        result_to_store = self.extractor.read_word(address_to_fetch)
+        
+        self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
+        print(f"\t\t{bcolors.WARNING}__load_word loaded 0x{result_to_store:02x} ({result_to_store}) from address {address_to_fetch:05x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+    # Puts whatever value is at array[byte-index] into the given target
+    def op_code__load_byte(self, instruction, associated_routine):
+        # operand 0 is the start of array and operand 1 is the index of the array
+        address_to_fetch = instruction.operands[0] + instruction.operands[1]
         result_to_store = self.extractor.read_byte(address_to_fetch)
         
         self.routine_interpreter.store_result(result_to_store, instruction.storage_target, associated_routine)
-        print(f"\t\t{bcolors.WARNING}__load_word loaded {result_to_store:02x} froma address {address_to_fetch:05x} into {instruction.storage_target:02x}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.WARNING}__load_byte loaded 0x{result_to_store:02x} ({result_to_store}) from address {address_to_fetch:05x} into {instruction.storage_target:02x}{bcolors.ENDC}")
         associated_routine.next_instruction_offset = instruction.storage_target_address + 1
 
     # Writes "value" to dynamic_memory[array[2*word-index]]
@@ -654,7 +665,14 @@ class InstructionInterpreter:
         value_to_print = byte_to_signed_int(instruction.operands[0])
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        print(f"\t\t{bcolors.OKCYAN}__print printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
+        print(f"\t\t{bcolors.OKCYAN}__print_num printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
+
+    def op_code__print_char (self, instruction, associated_routine):
+        value_to_print = self.extractor.read_char(instruction.operands[0])
+        
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        print(f"\t\t{bcolors.OKCYAN}__print_char printed the value {instruction.operands[0]:04x} as \n{value_to_print}{bcolors.ENDC}")
+
 
     def op_code__print_string_at_packed_address (self, instruction, associated_routine):
         packed_address = instruction.operands[0] * 2
@@ -717,6 +735,7 @@ class InstructionInterpreter:
                 print(f"\t\t{bcolors.WARNING}__increment_and_check branches to {associated_routine.next_instruction_offset:05x}{bcolors.ENDC}")
         else:
             # update address of next instruction
+            print(f"\t\t{bcolors.WARNING}__increment_and_check does not branch{bcolors.ENDC}")
             associated_routine.next_instruction_offset = address_after_last_branch_info_byte
         
         # Debug info:
