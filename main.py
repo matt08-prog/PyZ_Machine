@@ -52,15 +52,15 @@ def main():
     # extractor.load_abreviator(abreviator.abreviations_table)
 
     # Export hex data to file
-    if should_dump_input_file:
-        exporter.export_hex_data(hex_data)
+    # if should_dump_input_file:
+    #     exporter.export_hex_data(hex_data)
     
     # List abreviations table
-    if should_output_abbreviations_table:
-        abreviator.print_abreviations()
+    # if should_output_abbreviations_table:
+    #     abreviator.print_abreviations()
 
     # Display header data
-    header.output_header_info()
+    # header.output_header_info()
 
     # Tell Interpreter to get first routine
     routine_interpreter.start_interpreting()

@@ -32,9 +32,16 @@ used_debug_colors = ["HEADER",
 #     "BOLD",
 #     "UNDERLINE"]
 
-def debug(debug_string, severity_string="unclassified_severity"):
-    if (severity_string != "unclassified_severity") and (severity_string in used_debug_colors):
-        print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}")
-    # if (severity_string == "time-stamp"):
-    #     print(f"{debug_string}")
+instructions_only = True
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    if instructions_only:
+        if (severity_string == "time-stamp-only"):
+            print(f"{debug_string}", end=end_string)
+    else:
+        if (severity_string != "unclassified_severity"):
+            if (severity_string in used_debug_colors):
+                print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}", end=end_string)
+            elif (severity_string.lower() == "debug" or severity_string == "time-stamp"):
+                print(debug_string, end=end_string)
 

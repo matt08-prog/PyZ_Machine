@@ -59,27 +59,31 @@ class RoutineInterpreter:
     
     def run_routine(self, routine):
         # print(f"number of local vars: {routine.num_local_vars}")
-        debug(f"routine's local vars: {list(map(hex, routine.local_vars))}")
+        debug(f"routine's local vars: {list(map(hex, routine.local_vars))}", "debug")
         while True:
             self.time_stamp += 1
             if self.time_stamp > self.max_time_step:
                 # debug exit, otherwise it tries to return from all routines at end of simulation
                 exit(-1)
             next_instruction = routine.read_next_instruction()
-            print(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address")
-            # debug(f"{routine.next_instruction_offset:02x}", "time-stamp")
-            print(f"\tinstruction_form: {self.debug_instruction_form_dict[next_instruction.instruction_form]}")
+
+
+            debug(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address", "time-stamp")
+            debug(f"{routine.next_instruction_offset:02x}", "time-stamp-only")
+
+
+            debug(f"\tinstruction_form: {self.debug_instruction_form_dict[next_instruction.instruction_form]}", "debug")
             # print(f"\tnum_ops: {next_instruction.num_ops}")
             # print(f"\topcode: {next_instruction.opcode}")
-            print(f"\toperand_types: [", end="")
+            debug(f"\toperand_types: [", "debug", "")
             if next_instruction.num_ops > 0: # some instruction like print have 0Ops
                 for operand_index in range(len(next_instruction.operand_types)):
                     end_string = ", " if operand_index != len(next_instruction.operand_types) - 1 else "]\n" 
-                    print(f"{self.operand_types_dict[next_instruction.operand_types[operand_index]]}" , end=end_string)
+                    debug(f"{self.operand_types_dict[next_instruction.operand_types[operand_index]]}" , "debug", end_string)
             else:
-                print("]")
-            print(f"\toriginal operands: {next_instruction.debug_operands}")
-            print(f"\t         operands: {list(map(hex, next_instruction.operands))}")
+                debug("]", "debug")
+            debug(f"\toriginal operands: {next_instruction.debug_operands}", "debug")
+            debug(f"\t         operands: {list(map(hex, next_instruction.operands))}", "debug")
             # print(f"\taddress_of_store_target (if it exists): {next_instruction.storage_target_address:02x}")
             # print(f"\taddress_of_branch_target (if it exists): {next_instruction.branch_target_address:02x}")
             self.instruction_interpreter.interpret_instruction(next_instruction, routine)

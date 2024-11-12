@@ -2,6 +2,7 @@
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from object import Object
+from debuger import debug
 # from interpreter import Interpreter
 
 class ObjectLoader:
@@ -11,7 +12,8 @@ class ObjectLoader:
         self.start_of_properties_table = 0x00
         self.objects = self.load_objects()
         self.default_properties = self.load_default_properties()
-        print(f"default_properties = {self.default_properties}")
+        debug(f"default_properties = {self.default_properties}", "debug")
+        self.fix_object_graph()
 
     def load_objects(self):
         objects = [Object(0)]
@@ -21,12 +23,36 @@ class ObjectLoader:
 
         while start_of_next_object != self.start_of_properties_table:
         # while object_index < 5:
-            objects.append(self.load_object(object_index, start_of_next_object))
+            object_to_append = self.load_object(object_index, start_of_next_object)
+            objects.append(object_to_append)
             # print(f"object #{object_index} ({objects[-1].object_description}) has properties: {objects[-1].properties}")
+
+
             start_of_next_object += 9
             object_index += 1
         
         return objects
+    
+    def fix_object_graph(self):
+
+        for object_to_append in self.objects:
+            # print(f"fixing object {object_to_append.object_number}")
+            object_child_index = object_to_append.child
+            if (object_child_index > 0):
+                # print(f"fixing object child {object_child_index}")
+
+                object_child = self.find_object(object_to_append)
+                if object_child.object_number > 0:
+                    print(f"added {object_to_append.object_number} as {object_child}'s parent")
+                    object_child.parent = object_to_append.object_number
+
+            object_parent_index = object_to_append.parent
+            if (object_parent_index > 0):
+                object_parent = self.find_object(object_to_append)
+                if object_parent.object_number > 0:
+                    object_parent.child = object_to_append.object_number
+
+
 
     def load_object(self, object_index, starting_address):
         attributes = []
@@ -180,12 +206,16 @@ class ObjectLoader:
         previous_child_of_object_destination = self.find_object(object_destination.child)
 
         object_destination.child = object_to_be_moved.object_number
-        # print(f"object destination {object_destination.object_number:02x} now has child {object_to_be_moved.object_number:02x}")
+        debug(f"object destination {object_destination.object_number} now has child {object_to_be_moved.object_number}")
         if (previous_child_of_object_destination.object_number != -1):
-            # print(f"original object {object_to_be_moved.object_number:02x} now has sibling {previous_child_of_object_destination.object_number:02x}")
+            debug(f"original object {object_to_be_moved.object_number} now has sibling {previous_child_of_object_destination.object_number}")
             object_to_be_moved.sibling = previous_child_of_object_destination.object_number
         if (original_sibling_of_object_to_be_moved.object_number != -1):
-            # print(f"original object's parent {original_parent_of_object_to_be_moved.object_number:02x} now has child {original_sibling_of_object_to_be_moved.object_number:02x}")
+            debug(f"original object's parent {original_parent_of_object_to_be_moved.object_number} now has child {original_sibling_of_object_to_be_moved.object_number}")
             original_parent_of_object_to_be_moved.child = original_sibling_of_object_to_be_moved.object_number
+        
+        debug(f"original object {object_to_be_moved.object_number} now has parent {index_of_object_destination}")
+        object_to_be_moved.parent = index_of_object_destination
+
 
         

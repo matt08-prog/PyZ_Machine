@@ -614,7 +614,7 @@ class InstructionInterpreter:
 
     def op_code__jump_if_object_a_is_direct_child_of_object_b(self, instruction, associated_routine):
         object_a_number = instruction.operands[0]
-        object_b_number = instruction.operands[0]
+        object_b_number = instruction.operands[1]
         unsigned_branch_offset = instruction.branch_target_address
         signed_branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)
 
@@ -623,7 +623,7 @@ class InstructionInterpreter:
             debug(f"\t\t__jump_if_object_a_is_direct_child_of_object_b jumped to {associated_routine.next_instruction_offset:05x}", "WARNING")
         else:
             associated_routine.next_instruction_offset = instruction.branch_target_address
-            debug(f"\t\t__jump_if_object_a_is_direct_child_of_object_b did not jump ", "WARNING")
+            debug(f"\t\t__jump_if_object_a_is_direct_child_of_object_b did not jump because object #{object_a_number} is not the direct child of object #{object_b_number} ", "WARNING")
 
     def op_code__add_object(self, instruction, associated_routine):
         object_to_be_moved = instruction.operands[0]
@@ -675,14 +675,12 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__print_char printed the value {instruction.operands[0]:04x} as \n{value_to_print}")
 
-
     def op_code__print_string_at_packed_address (self, instruction, associated_routine):
         packed_address = instruction.operands[0] * 2
         z_string_to_print = self.extractor.read_string(packed_address)
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n{z_string_to_print}")
-    
 
     def op_code__increment_and_check (self, instruction, associated_routine):
         variable_address = instruction.operands[0]
@@ -700,8 +698,6 @@ class InstructionInterpreter:
         incremented_variable_value = add_16bit_signed(variable_value, 1)
 
         self.routine_interpreter.store_result(incremented_variable_value, variable_address, associated_routine)
-
-
 
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
         invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
