@@ -144,12 +144,15 @@ class InstructionInterpreter:
 
             0x55: self.op_cod__sub,
 
+            0x95: self.op_code__increment,
+
             0xc9: self.op_code__and,
 
             0xa0: self.op_code__jump_if_zero,
             0xc1: self.op_code__jump_if_equal,
             0x61: self.op_code__jump_if_equal,
             0x41: self.op_code__jump_if_equal,
+            0x42: self.op_code__jump_if_less_than,
             0x43: self.op_code__jump_if_greater_than,
             0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
@@ -205,15 +208,20 @@ class InstructionInterpreter:
         routine_to_call = instruction.operands[0] * 2
 
         operands_to_pass_on = instruction.operands[1:]
-        debug(f"\t\t__call instruction calls routine ({routine_to_call:05x}), with operands ({operands_to_pass_on})", "WARNING")
-        # result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
-        called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on, self.routine_interpreter)
-
-        # update address of next instruction based on if there was a store byte or branch byte
-        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+        if routine_to_call != 0:
+            debug(f"\t\t__call instruction calls routine ({routine_to_call:05x}), with operands ({operands_to_pass_on})", "WARNING")
+            called_routine = Routine(self.extractor, routine_to_call, operands_to_pass_on, self.routine_interpreter)
+            # update address of next instruction based on if there was a store byte or branch byte
+            associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+            self.routine_interpreter.store_result(self.routine_interpreter.run_routine(called_routine), instruction.storage_target, associated_routine)
+        else:
+            debug(f"\t\t__call instruction returns False", "WARNING")
+            # associated_routine.should_return = True
+            associated_routine.return_value = False
+            associated_routine.next_instruction_offset = instruction.branch_target_address
+        # self.branch_if_test_condition_passes(instruction, associated_routine, True, False, "__call")
 
         # self.store_result(self.run_routine(called_routine), result_storage_target, associated_routine)
-        self.routine_interpreter.store_result(self.routine_interpreter.run_routine(called_routine), instruction.storage_target, associated_routine)
 
     def op_code__add(self, instruction, associated_routine):
         result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
@@ -245,6 +253,24 @@ class InstructionInterpreter:
 
         self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
         debug(f"\t\t__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference:04x} into {result_storage_target:04x}", "WARNING")
+
+    def op_code__increment(self, instruction, associated_routine):
+        variable_address = instruction.operands[0]
+        variable_value = 0x0000
+        
+        if instruction.operand_types[0] != -1: # if the first operand was not a variable, it should be treated as one
+            variable_value = instruction.load_variable(variable_address)
+        else:
+            # The first operand was already treated like a variable
+            variable_address = instruction.original_operands[0]
+            variable_value = instruction.operands[0]
+
+        incremented_variable_value = add_16bit_signed(variable_value, 1)
+
+        self.routine_interpreter.store_result(incremented_variable_value, variable_address, associated_routine)
+
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+        debug(f"\t\t__increment incremented {variable_address:02x} from {variable_value:02x} to {incremented_variable_value:02x}", "WARNING")
 
     def op_code__and (self, instruction, associated_routine):
         result_to_store = instruction.operands[0] & instruction.operands[1]
@@ -305,6 +331,18 @@ class InstructionInterpreter:
         debug(f"\t\tbranch offset: {branch_offset}")
         debug(f"\t\tWill branch: {will_branch}")
         debug(f"\t\tWill return: {will_return}")
+
+    def op_code__jump_if_less_than(self, instruction, associated_routine):
+        if len(instruction.operands) > 2 or len(instruction.operands) < 2:
+            debug(f"{bcolors.FAIL}op_code__jump_if_less_than expected 2 operands but got {len(instruction.operands)}")
+            exit(-1)
+        
+        value_a = binary_word_16_bits_to_signed_int(instruction.operands[0])
+        value_b = binary_word_16_bits_to_signed_int(instruction.operands[1])
+
+        test_condition = (value_a < value_b)
+
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, False, "__jump_if_less_than")
 
     def op_code__jump_if_greater_than(self, instruction, associated_routine):
         if len(instruction.operands) > 2 or len(instruction.operands) < 2:
@@ -635,7 +673,7 @@ class InstructionInterpreter:
         object_description = self.object_loader.get_object_description(object_number)
 
         # print(f"\t\t{bcolors.OKCYAN}__print_object printed object #{object_number} as: \n{object_description[0]}")
-        debug(f"\t\t__print_object printed object #{object_number} as: \n{object_description[0]}", "CYAN")
+        debug(f"\t\t__print_object printed object #{object_number} as \n:{object_description[0]}", "BOLD")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
     def op_code__return(self, instruction, associated_routine):
@@ -653,32 +691,32 @@ class InstructionInterpreter:
         string_to_print = HexExtractor_read_string_object[0]
         final_address_after_string = HexExtractor_read_string_object[1]
         associated_routine.next_instruction_offset = final_address_after_string
-        debug(f"\t\t{bcolors.OKCYAN}__print printed\n{string_to_print}")
+        debug(f"\t\t__print printed\n:{string_to_print}", "CYAN")
 
 
     def op_code__new_line(self, instruction, associated_routine):
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__new_line\n", "CYAN")
+        debug(f"\t\t__new_line printed:\n", "CYAN")
 
     
     def op_code__print_num (self, instruction, associated_routine):
         value_to_print = byte_to_signed_int(instruction.operands[0])
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__print_num printed the value {instruction.operands[0]:04x} as \n{value_to_print}")
+        debug(f"\t\t__print_num printed the value {instruction.operands[0]:04x} as \n:{value_to_print}", "CYAN")
 
     def op_code__print_char (self, instruction, associated_routine):
         value_to_print = self.extractor.read_char(instruction.operands[0])
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__print_char printed the value {instruction.operands[0]:04x} as \n{value_to_print}")
+        debug(f"\t\t__print_char printed the value {instruction.operands[0]:04x} as \n:{value_to_print}", "CYAN")
 
     def op_code__print_string_at_packed_address (self, instruction, associated_routine):
         packed_address = instruction.operands[0] * 2
         z_string_to_print = self.extractor.read_string(packed_address)
         
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n{z_string_to_print}")
+        debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n:{z_string_to_print}")
 
     def op_code__increment_and_check (self, instruction, associated_routine):
         variable_address = instruction.operands[0]
