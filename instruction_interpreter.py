@@ -179,6 +179,7 @@ class InstructionInterpreter:
 
             0xab: self.op_code__return,
             0xb0: self.op_code__return_true,
+            0xb1: self.op_code__return_false,
 
             0xb2: self.op_code__print,
             0xe5: self.op_code__print_char,
@@ -574,21 +575,21 @@ class InstructionInterpreter:
         
         # Debug info:
         if branch_info_num_bytes == 1:
-            debug(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+            debug(f"\t\tbranch info byte: {instruction.storage_target:02x}", "debug")
         else:
-            debug(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
-        debug(f"\t\tbranch condition inverted: {invert_branch_condition}")
-        debug(f"\t\ttest condition passed: {test_condition}")
-        debug(f"\t\tbranch offset: {branch_offset}")
-        debug(f"\t\tWill branch: {will_branch}")
-        debug(f"\t\tWill return: {will_return}")
+            debug(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}", "debug")
+        debug(f"\t\tbranch condition inverted: {invert_branch_condition}", "debug")
+        debug(f"\t\ttest condition passed: {test_condition}", "debug")
+        debug(f"\t\tbranch offset: {branch_offset}", "debug")
+        debug(f"\t\tWill branch: {will_branch}", "debug")
+        debug(f"\t\tWill return: {will_return}", "debug")
     
     def op_code__set_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         attribute = instruction.operands[1]
         self.object_loader.set_attribute(object_number, attribute)
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__set_attribute ensured object #{object_number} had attribute #{attribute}", "WARNING")
+        debug(f"\t\t__set_attribute ensured object #{object_number} had attribute #{attribute}", "debug")
 
     def op_code__get_property(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -684,7 +685,12 @@ class InstructionInterpreter:
     def op_code__return_true(self, instruction, associated_routine):
         associated_routine.should_return = True
         associated_routine.return_value = 1 # AKA True
-        debug(f"\t\t__return returned routine with True (AKA 1)", "HEADER")
+        debug(f"\t\t__return_true returned routine with True (AKA 1)", "HEADER")
+    
+    def op_code__return_false(self, instruction, associated_routine):
+        associated_routine.should_return = True
+        associated_routine.return_value = 0 # AKA False
+        debug(f"\t\t__return_false returned routine with False (AKA 0)", "HEADER")
 
     def op_code__print(self, instruction, associated_routine):
         HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)

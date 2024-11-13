@@ -23,14 +23,15 @@ used_debug_colors = [
     "BOLD",
     "UNDERLINE"]
 
-instructions_only = False
-printed_character_only = True
+instructions_only = 1
+printed_character_only = 0
+print_instructions = 0
 
 def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
     if instructions_only:
         if (severity_string == "time-stamp-only"):
             print(f"{debug_string}", end=end_string)
-    elif not printed_character_only:
+    elif not printed_character_only and print_instructions:
         if (severity_string != "unclassified_severity"):
             if (severity_string in used_debug_colors):
                 print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}", end=end_string)
@@ -39,7 +40,7 @@ def debug(debug_string, severity_string="unclassified_severity", end_string="\n"
             elif (severity_string.lower() == "cyan"):
                 debug_string = debug_string.replace(":", "")
                 print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}", end=end_string)
-    else:
+    elif printed_character_only:
         if (severity_string.lower() == "cyan" or severity_string.lower() == "bold"):
             start_index = debug_string.index(":") + 1
             debug_string = debug_string[start_index:]

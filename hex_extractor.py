@@ -30,6 +30,7 @@ class HexExtractor:
             read_word = self.read_word(start_of_global_data_table + global_data_address)
             read_word = read_word - (read_word >> 15 << 16)
             globals_data.append(read_word)
+        # print(f"globals_data {globals_data}")
         return globals_data
 
     def extract_hex(self):
