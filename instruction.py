@@ -84,10 +84,15 @@ class Instruction:
 
         self.load_operands(initial_operands_offset)
     
-    def load_variable(self, load_target):
+    def load_variable(self, load_target, should_pop_stack=False):
         if (load_target == 0x00):
             debug(f"\t\tload ({self.routine_interpreter.stack[-1]:02x}) from top of stack", "FAIL")
-            return self.routine_interpreter.stack[-1]
+            stack_value = self.routine_interpreter.stack[-1]
+            if should_pop_stack:
+                print(f"length before poping {len(self.routine_interpreter.stack)}")
+                self.routine_interpreter.stack.pop()
+                print(f"length after poping {len(self.routine_interpreter.stack)}")
+            return stack_value
         elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
             debug(f"\t\tload ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x})", "FAIL")
             return self.current_routine.local_vars[load_target - 1]

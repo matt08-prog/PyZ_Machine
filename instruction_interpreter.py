@@ -180,6 +180,7 @@ class InstructionInterpreter:
             0xab: self.op_code__return,
             0xb0: self.op_code__return_true,
             0xb1: self.op_code__return_false,
+            0xb8: self.op_code__return_popped_top_of_stack,
 
             0xb2: self.op_code__print,
             0xe5: self.op_code__print_char,
@@ -691,6 +692,15 @@ class InstructionInterpreter:
         associated_routine.should_return = True
         associated_routine.return_value = 0 # AKA False
         debug(f"\t\t__return_false returned routine with False (AKA 0)", "HEADER")
+
+    def op_code__return_popped_top_of_stack(self, instruction, associated_routine):
+        top_of_stack_to_return = instruction.load_variable(0, True) # get top of stack
+
+        associated_routine.should_return = True
+        associated_routine.return_value = top_of_stack_to_return # AKA False
+        debug(f"\t\t__return_popped_top_of_stack returned top of stack ({top_of_stack_to_return})", "HEADER")
+
+
 
     def op_code__print(self, instruction, associated_routine):
         HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)

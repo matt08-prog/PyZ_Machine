@@ -23,9 +23,9 @@ used_debug_colors = [
     "BOLD",
     "UNDERLINE"]
 
-instructions_only = 1
+instructions_only = 0
 printed_character_only = 0
-print_instructions = 0
+print_instructions = 1
 
 def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
     if instructions_only:
