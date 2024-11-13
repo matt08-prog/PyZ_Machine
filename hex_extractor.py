@@ -26,11 +26,13 @@ class HexExtractor:
 
     def get_init_global_data(self, start_of_global_data_table):
         globals_data = []
+        global_data_index = 0
         for global_data_address in range(0, 310, 2):
             read_word = self.read_word(start_of_global_data_table + global_data_address)
             read_word = read_word - (read_word >> 15 << 16)
             globals_data.append(read_word)
-        # print(f"globals_data {globals_data}")
+            # print(f"globals_data #{global_data_index} = {read_word}")
+            global_data_index += 1
         return globals_data
 
     def extract_hex(self):

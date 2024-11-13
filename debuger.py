@@ -23,7 +23,7 @@ used_debug_colors = [
     "BOLD",
     "UNDERLINE"]
 
-instructions_only = 0
+instructions_only = 1
 printed_character_only = 0
 print_instructions = 1
 

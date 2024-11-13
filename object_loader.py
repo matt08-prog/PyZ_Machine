@@ -58,14 +58,18 @@ class ObjectLoader:
         attributes = []
         attribute_index = 1
         attribute_table = self.extractor.read_bytes(starting_address, 4)
-        for byte_index in range(0, 24, 8):
-            byte = ((0x000000FF << byte_index) & attribute_table) >> byte_index
-            for bit in range(0, 8, 1):
-            # for bit in range(0, 8, 1):
-                if (byte & (0b10000000 >> bit)) != 0:
-                    attributes.append((bit) + byte_index)
-                attribute_index += 1
-            attribute_index += 1
+        for bit in range(32, -1, -1):
+            if (attribute_table & (0b1 << bit)) != 0:
+                attributes.append(31 - bit)
+
+        # for byte_index in range(0, 25, 8):
+        #     byte = ((0x000000FF << byte_index) & attribute_table) >> byte_index
+        #     for bit in range(0, 8, 1):
+        #     # for bit in range(0, 8, 1):
+        #         if (byte & (0b10000000 >> bit)) != 0:
+        #             attributes.append((bit) + byte_index)
+        #         attribute_index += 1
+        #     attribute_index += 1
         
         parent_obj_num = self.extractor.read_byte(starting_address + 4)
         sibling_obj_num = self.extractor.read_byte(starting_address + 5)
@@ -133,7 +137,7 @@ class ObjectLoader:
     def test_attribute(self, object_number, attribute):
         for obj in self.objects:
             if  obj.object_number == object_number:
-                # print(f"obj.attribute_flags {obj.attribute_flags}")
+                debug(f"obj.attribute_flags {obj.attribute_flags}", "debug")
                 return attribute in obj.attribute_flags
     
     def set_attribute(self, object_number, attribute):

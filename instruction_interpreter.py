@@ -147,6 +147,7 @@ class InstructionInterpreter:
             0x95: self.op_code__increment,
 
             0xc9: self.op_code__and,
+            0x49: self.op_code__and,
 
             0xa0: self.op_code__jump_if_zero,
             0xc1: self.op_code__jump_if_equal,
@@ -157,9 +158,11 @@ class InstructionInterpreter:
             0x05: self.op_code__increment_and_check,
             0x8c: self.op_code__jump,
 
+            0x10: self.op_code__load_byte,
             0x30: self.op_code__load_byte,
             0x4F: self.op_code__load_word,
             0x0F: self.op_code__load_word,
+            0x6F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
 
             0x0d: self.op_code__store,
@@ -464,6 +467,9 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(value_to_store, variable_store_destination, associated_routine)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__store stored {value_to_store:02x} into {variable_store_destination:05x}", "WARNING")
+        if variable_store_destination - 0x10 == 0 or variable_store_destination - 0x10 == 82:
+            debug(f"\t\t__store stored {value_to_store:02x} into {int(variable_store_destination - 0x10)}", "WARNING")
+            debug(f"\t\t__store stored {value_to_store:02x} into {int(variable_store_destination - 0x10)}", "WARNING")
 
     def op_code__put_prop(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -591,6 +597,8 @@ class InstructionInterpreter:
         self.object_loader.set_attribute(object_number, attribute)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__set_attribute ensured object #{object_number} had attribute #{attribute}", "debug")
+        # if object_number == 64:
+        #     print(64)
 
     def op_code__get_property(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -644,6 +652,7 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(parent_object_number, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
         debug(f"\t\t__get_parent_of_object found object #{object_number} has parent #{parent_object_number}", "WARNING")
+        debug(f"\t\t__get_parent_of_object found object #{object_number} has parent #{parent_object_number}", "WARNING")
 
     def op_code__clear_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -651,6 +660,8 @@ class InstructionInterpreter:
         self.object_loader.remove_attribute(object_number, attribute)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__clear_attribute ensured object #{object_number} does not have attribute #{attribute}", "WARNING")
+        # if object_number == 64:
+        #     print(64)
 
     def op_code__jump_if_object_a_is_direct_child_of_object_b(self, instruction, associated_routine):
         object_a_number = instruction.operands[0]
