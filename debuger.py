@@ -2,6 +2,7 @@
 bcolors = {
     "HEADER": '\033[95m',
     "BLUE": '\033[94m',
+    "OKBLUE": '\033[94m',
     "CYAN": '\033[96m',
     "GREEN": '\033[92m',
     "WARNING": '\033[93m',
@@ -15,6 +16,7 @@ bcolors = {
 used_debug_colors = [
     "HEADER",
     "BLUE",
+    "OKBLUE",
     # "CYAN", # special case for outputting to terminal
     "GREEN",
     "WARNING",
@@ -23,7 +25,7 @@ used_debug_colors = [
     "BOLD",
     "UNDERLINE"]
 
-instructions_only = 1
+instructions_only = 0
 printed_character_only = 0
 print_instructions = 1
 

@@ -189,9 +189,10 @@ class InstructionInterpreter:
             0xe5: self.op_code__print_char,
             0xe6: self.op_code__print_num,
             0xad: self.op_code__print_string_at_packed_address,
-            0xbb: self.op_code__new_line
+            0xbb: self.op_code__new_line,
+
+            0xe4: self.op_code__read_line_of_user_input,
             }
-        
 
     def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
         if instruction.full_opcode not in self.opcode_table.keys():
@@ -809,5 +810,36 @@ class InstructionInterpreter:
         debug(f"\t\tbranch offset: {branch_offset}")
         debug(f"\t\tWill branch: {will_branch}")
         debug(f"\t\tWill return: {will_return}")
+
+    def op_code__read_line_of_user_input (self, instruction, associated_routine):
+        text_memory_buffer_address = instruction.operands[0] * 2
+        parse_memory_buffer_address = instruction.operands[1] * 2
+
+        max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
+        debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
+
+        user_input = input()[0:max_number_of_input_letters].lower()
+
+        z_characters = self.extractor.string_to_z_characters(user_input)
+        z_words = self.extractor.z_characters_to_z_words(z_characters)
+        print(f"z_chars {z_characters}")
+        print(f"z_words {z_words}")
+        def int_to_binary(n, width=15):
+            return f'{n:0{width}b}'
+
+        print(f"z_words {list(map(lambda x: int_to_binary(x), z_words))}")
+        # print(f"z_words {list(map(bin,z_words))}")
+        actual_length_of_user_input = len(z_characters)
+        self.extractor.write_byte(text_memory_buffer_address + 1, actual_length_of_user_input)
+        self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
+        debug(f"\t\t__read_line_of_user_input recieved input \"{user_input}\" ", "WARNING")
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+
+        max_number_of_textual_words_to_be_parsed = self.extractor.read_byte(parse_memory_buffer_address)
+        
+
+
+
+
 
     # def op_code__ (self, instruction, associated_routine):

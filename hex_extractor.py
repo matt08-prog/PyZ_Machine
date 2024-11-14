@@ -53,6 +53,20 @@ class HexExtractor:
         self.hex_data[address + 1] = [address, hex(word_to_store & 0x00FF)]
         debug(f"\t\tThe word ({word_to_store:04x}) was written to address ({address:05x})", "OKBLUE")
 
+    def write_array_of_words(self, starting_address, word_array):
+        word_index = 0
+        for word_offset in range(0, len(word_array) * 2, 2):
+            word = word_array[word_index]
+            self.write_word(starting_address + word_offset, word)
+            word_index += 1
+    
+    def write_byte(self, address, byte_to_store):
+        if (int.bit_length(byte_to_store) > 8):
+            print(f"{bcolors.FAIL}The byte ({byte_to_store:04x}) trying to be written to memory ({address:05x}) is not 8-bits long{bcolors.ENDC}")
+            exit(-1)
+        self.hex_data[address] = [address, hex(byte_to_store & 0xFF)]
+        debug(f"\t\tThe byte ({byte_to_store:04x}) was written to address ({address:05x})", "OKBLUE")
+
     
     # returns decimal value of word at given address
     def read_word(self, address):
@@ -137,3 +151,41 @@ class HexExtractor:
             
             z_words = []
             current_address += 2
+    
+    def string_to_z_characters(self, input_string):
+        z_characters = []
+        for letter_index in range(len(input_string)):
+            letter = input_string[letter_index]
+            # for alphabet_index in range(3):
+            if letter in self.alphabet[2]:
+                # print(f"{letter} in alphabet A2")
+                z_characters.append(3) # shift for 1 character to A2
+                z_characters.append(self.alphabet[2].index(letter))
+            elif letter in self.alphabet[0]:
+                # print(f"{letter} in alphabet A0")
+                z_characters.append(self.alphabet[0].index(letter))
+            # else:
+            #     print(f"unknown character {letter} was read from user input, now exiting")
+            #     exit(-1)
+        return z_characters
+    
+    def z_characters_to_z_words(self, original_z_characters):
+        z_characters = original_z_characters.copy() # making a copy so popping doesn't affect original z_characters array
+        z_words = []
+        current_z_word = 0x00
+        current_z_character = 0b00000
+        z_character_index = 0
+
+        while len(z_characters) > 0:
+            current_z_character = z_characters.pop()
+            assert(current_z_character == current_z_character & 0b11111) # make sure each z character is 5 bytes long
+            current_z_word |= (current_z_character << 10) >> (z_character_index * 5) # add current_z_character to the current_z_word
+            z_character_index = (z_character_index + 1)
+            if z_character_index > 2:
+                if len(z_characters) < 3:
+                    # print(f"set final z_word bit when there were {len(z_characters)} characters left")
+                    current_z_word |= 0x80 # set final word bit
+                z_words.append(current_z_word)
+                current_z_word = 0x00
+                z_character_index = 0
+        return z_words
