@@ -824,27 +824,35 @@ class InstructionInterpreter:
 
 
         z_characters = self.extractor.string_to_z_characters(cleaned_user_input)
-        z_words = self.extractor.z_characters_to_z_words(z_characters)
+
+        z_word_and_text_buffer_index_list_object = self.extractor.z_characters_to_z_words_and_text_buffer_index_list(z_characters, cleaned_user_input)
+        z_words = z_word_and_text_buffer_index_list_object[0]
+        text_buffer_index_list = z_word_and_text_buffer_index_list_object[1]
+        print(f"text_buffer_index_list {text_buffer_index_list}")
         print(f"z_chars {z_characters}")
-        print(f"z_words {z_words}")
+        # print(f"z_words {z_words}")
         def int_to_binary(n, width=15):
             return f'{n:0{width}b}'
 
-        print(f"z_words {list(map(lambda x: int_to_binary(x), z_words))}")
+        # print(f"z_words {list(map(lambda x: int_to_binary(x), z_words))}")
         # print(f"z_words {list(map(bin,z_words))}")
         actual_length_of_user_input = len(z_characters)
-        self.extractor.write_byte(text_memory_buffer_address + 1, actual_length_of_user_input)
-        self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
+
+
+        # self.extractor.write_byte(text_memory_buffer_address + 1, actual_length_of_user_input)
+        # self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
+
+
         debug(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ", "WARNING")
         debug(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})", "debug")
         # assert(len(z_words) == len(user_input))
-        associated_routine.next_instruction_offset = instruction.storage_target_address
 
         max_number_of_textual_words_to_be_parsed = self.extractor.read_byte(parse_memory_buffer_address)
-        split_input = self.extractor.split_input_string(cleaned_user_input)
+        split_input = self.extractor.split_input_string(cleaned_user_input, text_buffer_index_list)
         debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
 
         parsed_input = self.routine_interpreter.dictionary.parse_split_input(split_input)
+        associated_routine.next_instruction_offset = instruction.storage_target_address
 
 
 

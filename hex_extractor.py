@@ -166,6 +166,7 @@ class HexExtractor:
     
     def string_to_z_characters(self, input_string):
         z_characters = []
+        z_character_length_no_shift_chars = 0
         for letter_index in range(len(input_string)):
             letter = input_string[letter_index]
             # for alphabet_index in range(3):
@@ -173,26 +174,39 @@ class HexExtractor:
                 # print(f"{letter} in alphabet A2")
                 z_characters.append(3) # shift for 1 character to A2
                 z_characters.append(self.alphabet[2].index(letter))
+                z_character_length_no_shift_chars += 1
             elif letter in self.alphabet[0]:
                 # print(f"{letter} in alphabet A0")
                 z_characters.append(self.alphabet[0].index(letter))
+                z_character_length_no_shift_chars += 1
             else:
                 print(f"unknown character \"{ord(letter)}\" was read from user input, now exiting")
                 exit(-1)
+        debug(f"z_character_length_no_shift_chars: {z_character_length_no_shift_chars}", "debug")
         return z_characters
     
-    def z_characters_to_z_words(self, original_z_characters):
+    def z_characters_to_z_words_and_text_buffer_index_list(self, original_z_characters, original_input_string):
         z_characters = original_z_characters.copy() # making a copy so popping doesn't affect original z_characters array
         z_words = []
+        text_buffer_index_list = []
         current_z_word = 0x00
         current_z_character = 0b00000
         z_character_index = 0
+        z_character_true_index = 2 # the stored words start at byte 2 of the text_buffer
+
+        if len(z_characters) < 3: # only true if the entire input_string is less that 3 characters
+            # print(f"set final z_word bit when there were {len(z_characters)} characters left")
+            current_z_word |= 0x80 # set final word bit
+
 
         while len(z_characters) > 0:
-            current_z_character = z_characters.pop()
+            current_z_character = z_characters.pop(0)
             assert(current_z_character == current_z_character & 0b11111) # make sure each z character is 5 bytes long
             current_z_word |= (current_z_character << 10) >> (z_character_index * 5) # add current_z_character to the current_z_word
             z_character_index = (z_character_index + 1)
+            if current_z_character != 3:
+                text_buffer_index_list.append(z_character_true_index)
+            z_character_true_index += 1
             if z_character_index > 2:
                 if len(z_characters) < 3:
                     # print(f"set final z_word bit when there were {len(z_characters)} characters left")
@@ -200,11 +214,12 @@ class HexExtractor:
                 z_words.append(current_z_word)
                 current_z_word = 0x00
                 z_character_index = 0
-        return z_words
+        return [z_words, text_buffer_index_list]
 
-    def split_input_string(self, input_string):
+    def split_input_string(self, input_string, text_buffer_index_list):
         # starting_string = input_string.replace("\xa0", " ")
         starting_string = input_string
+        
         split_string = starting_string.split(" ") # array
         word_seperators = ["\"", ",", "."]
 
