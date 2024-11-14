@@ -189,3 +189,41 @@ class HexExtractor:
                 current_z_word = 0x00
                 z_character_index = 0
         return z_words
+
+    def lexical_analysis(self, input_string):
+        starting_string = input_string.replace(u"\xa0", u" ")
+        split_string = starting_string.split(" ") # array
+        word_seperators = ["\"", ","]
+
+        split_string = [element for i, element in enumerate(split_string) if element != ""]
+        print(f"First split string = {split_string}")
+        no_more_to_split = False
+
+        while not no_more_to_split:
+            no_more_to_split = True
+            for word_seperator in word_seperators:
+                for sub_string_index in range(len(split_string)):
+                    sub_string = split_string[sub_string_index]
+                    if sub_string == word_seperator:
+                        continue
+                    search_index = sub_string.find(word_seperator)
+                    if search_index != -1:
+                        no_more_to_split = False
+                        sub_string_copy = sub_string
+                        # split_string.remove(sub_string_index)
+                        sub_string_copy = sub_string_copy.split(word_seperator)
+                        replaced_sub_string = []
+                        for split_sub_string in sub_string_copy:
+                            if split_sub_string == "":
+                                replaced_sub_string.append(word_seperator)
+                            else:
+                                replaced_sub_string.append(split_sub_string)
+                        print(f"[{split_string[sub_string_index]}] split into {replaced_sub_string}")
+                        del split_string[sub_string_index]
+                        for split_sub_string_index in range(sub_string_index, sub_string_index  + len(replaced_sub_string), 1):
+                            split_string.insert(split_sub_string_index, replaced_sub_string[split_sub_string_index - sub_string_index])
+                            # split_string.insert(sub_string_index, sub_string_copy[0])
+                            # split_string.insert(sub_string_index + 1, sub_string_copy[1])
+                        search_index = sub_string.find(word_seperator)
+
+        return split_string

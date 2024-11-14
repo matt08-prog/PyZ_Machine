@@ -836,7 +836,8 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
         max_number_of_textual_words_to_be_parsed = self.extractor.read_byte(parse_memory_buffer_address)
-        
+        split_input = self.extractor.lexical_analysis(user_input)
+        debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
 
 
 
