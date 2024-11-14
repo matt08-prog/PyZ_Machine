@@ -13,6 +13,7 @@ class Header:
         self.start_of_globals_table = self.extractor.read_word(0x0c)
         self.start_of_object_property_defaults_table = self.extractor.read_word(0x0a)
         self.start_of_objects_table = self.extractor.read_word(0x0a) + 62
+        self.start_of_dictionary_table = self.extractor.read_word(0x08)
 
     def output_header_info(self):
         # Print number of bytes

@@ -105,6 +105,8 @@ class HexExtractor:
         z_words = []
         final_string = ""
         should_skip_index = 0
+        esc_10_bit_mode = -1 # 1 = still looking for first 5 bits, 0 = looking for second, -1 = normal operation
+        large_10_bit_z_word = 0b0000000000
         while True:
             word = self.read_word(current_address)
             next_word = self.read_word(current_address + 2)
@@ -122,7 +124,16 @@ class HexExtractor:
                     else:
                         next_z_word = ((next_word & 0b0111110000000000) >> 10)
                     current_alphabet = next_alphabet
-                    if (z_word in [1, 2, 3]):
+                    if esc_10_bit_mode > -1:
+                        large_10_bit_z_word = (z_word << 5) | next_z_word
+                        esc_10_bit_mode = -1
+                        if large_10_bit_z_word > 31 and large_10_bit_z_word < 127:
+                            final_string += chr(large_10_bit_z_word)
+                        else:
+                            print(f"large_10_bit_z_word ({large_10_bit_z_word}) is not standard ascii, exiting now")
+                            exit(-1)
+                        should_skip_index = 1
+                    elif (z_word in [1, 2, 3]):
                         if self.abreviator != None:
                             abreviated_zword = self.abreviator.abreviations_table[32* (z_word - 1) + next_z_word]
                             # print(f"abreviated zword: {z_word} {abreviated_zword}")
@@ -136,7 +147,8 @@ class HexExtractor:
                         next_alphabet = 2
                     else:
                         if (current_alphabet == 2 and z_word == 6):
-                            final_string += "_10_bit_ZSCII_CHAR_ESCAPE_"
+                            # final_string += "_10_bit_ZSCII_CHAR_ESCAPE_"
+                            esc_10_bit_mode = 1
                         else:
                             word = self.alphabet[current_alphabet][z_word]
                             final_string += word
@@ -164,9 +176,9 @@ class HexExtractor:
             elif letter in self.alphabet[0]:
                 # print(f"{letter} in alphabet A0")
                 z_characters.append(self.alphabet[0].index(letter))
-            # else:
-            #     print(f"unknown character {letter} was read from user input, now exiting")
-            #     exit(-1)
+            else:
+                print(f"unknown character \"{ord(letter)}\" was read from user input, now exiting")
+                exit(-1)
         return z_characters
     
     def z_characters_to_z_words(self, original_z_characters):
@@ -190,10 +202,11 @@ class HexExtractor:
                 z_character_index = 0
         return z_words
 
-    def lexical_analysis(self, input_string):
-        starting_string = input_string.replace(u"\xa0", u" ")
+    def split_input_string(self, input_string):
+        # starting_string = input_string.replace("\xa0", " ")
+        starting_string = input_string
         split_string = starting_string.split(" ") # array
-        word_seperators = ["\"", ","]
+        word_seperators = ["\"", ",", "."]
 
         split_string = [element for i, element in enumerate(split_string) if element != ""]
         print(f"First split string = {split_string}")
@@ -225,5 +238,4 @@ class HexExtractor:
                             # split_string.insert(sub_string_index, sub_string_copy[0])
                             # split_string.insert(sub_string_index + 1, sub_string_copy[1])
                         search_index = sub_string.find(word_seperator)
-
         return split_string
