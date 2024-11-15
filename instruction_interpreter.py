@@ -820,7 +820,7 @@ class InstructionInterpreter:
         debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
         user_input = input()[0:max_number_of_input_letters].lower()
-        cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")
+        cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
 
         z_characters = self.extractor.string_to_z_characters(cleaned_user_input)
@@ -839,8 +839,8 @@ class InstructionInterpreter:
         actual_length_of_user_input = len(z_characters)
 
 
-        # self.extractor.write_byte(text_memory_buffer_address + 1, actual_length_of_user_input)
-        # self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
+        self.extractor.write_byte(text_memory_buffer_address + 1, actual_length_of_user_input)
+        self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
 
 
         debug(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ", "WARNING")
@@ -851,7 +851,19 @@ class InstructionInterpreter:
         split_input = self.extractor.split_input_string(cleaned_user_input, text_buffer_index_list)
         debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
 
-        parsed_input = self.routine_interpreter.dictionary.parse_split_input(split_input)
+        self.extractor.write_byte(parse_memory_buffer_address + 1, len(split_input))
+        parse_buffer_index = 2
+        for word_entry in split_input:
+            dictionary_address = self.routine_interpreter.dictionary.get_dict_address(word_entry[0]) # not stored as packed because not always even
+            print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
+            self.extractor.write_word(parse_memory_buffer_address + parse_buffer_index, dictionary_address)
+            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 2, len(word_entry[0]))
+            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 3, word_entry[1])
+            parse_buffer_index += 4
+
+        
+
+        # parsed_input = self.routine_interpreter.dictionary.parse_split_input(split_input)
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
 

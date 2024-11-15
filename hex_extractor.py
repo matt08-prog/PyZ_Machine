@@ -216,41 +216,72 @@ class HexExtractor:
                 z_character_index = 0
         return [z_words, text_buffer_index_list]
 
+    def split_and_store_original_index(self, input_array, split_char):
+        final_array = input_array.copy()
+        found_nothing_to_split = False
+        index = 0
+
+
+        while not found_nothing_to_split:
+            # if index > 2 and split_char != " ":
+            #     break
+            index += 1
+            offset = 0
+            found_nothing_to_split = True
+
+            for string_entry_index in range(len(final_array)):
+                string_entry = final_array[string_entry_index]
+                if string_entry[0] == split_char:
+                    continue # skip over entries that are just the character to be split
+                search_index = string_entry[0].find(split_char)
+                if search_index != -1:
+                    offset = 0
+                    # if split_char != " ":
+                    #     print(f"final_array (replacing {split_char}) = {final_array}")
+                    found_nothing_to_split = False
+                    string_entry_copy = string_entry.copy()
+                    del final_array[string_entry_index]
+
+                    before_split_char = string_entry_copy[0][0:search_index] # the portion of the string before the split_char
+                    if len(before_split_char) > 0:
+                        final_array.insert(string_entry_index, [before_split_char, string_entry_copy[1]])
+                        offset += 1
+
+                    final_array.insert(string_entry_index + offset, [split_char, string_entry_copy[1] + search_index]) # the split_char
+                    offset += 1
+
+                    after_split_char = string_entry_copy[0][search_index+1:] # the portion of the string after the split_char
+                    if len(after_split_char) > 0:
+                        final_array.insert(string_entry_index + offset, [after_split_char, string_entry_copy[1] + search_index + 1])
+        return final_array
+
+
     def split_input_string(self, input_string, text_buffer_index_list):
         # starting_string = input_string.replace("\xa0", " ")
-        starting_string = input_string
-        
-        split_string = starting_string.split(" ") # array
+        starting_string = [[input_string.replace("\'", r"'"), 0]]
+        print(f"starting_string: {starting_string}")
+        # split_string = starting_string.split(" ") # array
+        split_string = self.split_and_store_original_index(starting_string, " ") # array
         word_seperators = ["\"", ",", "."]
 
-        split_string = [element for i, element in enumerate(split_string) if element != ""]
-        print(f"First split string = {split_string}")
+        # split_string = [element for _, element in enumerate(split_string) if element != ""]
+        # print(f"First split string = {split_string}")
         no_more_to_split = False
+        index = 0
 
         while not no_more_to_split:
+            index += 1
+            # if index > 2:
+            #     break
             no_more_to_split = True
             for word_seperator in word_seperators:
-                for sub_string_index in range(len(split_string)):
-                    sub_string = split_string[sub_string_index]
-                    if sub_string == word_seperator:
-                        continue
-                    search_index = sub_string.find(word_seperator)
-                    if search_index != -1:
-                        no_more_to_split = False
-                        sub_string_copy = sub_string
-                        # split_string.remove(sub_string_index)
-                        sub_string_copy = sub_string_copy.split(word_seperator)
-                        replaced_sub_string = []
-                        for split_sub_string in sub_string_copy:
-                            if split_sub_string == "":
-                                replaced_sub_string.append(word_seperator)
-                            else:
-                                replaced_sub_string.append(split_sub_string)
-                        print(f"[{split_string[sub_string_index]}] split into {replaced_sub_string}")
-                        del split_string[sub_string_index]
-                        for split_sub_string_index in range(sub_string_index, sub_string_index  + len(replaced_sub_string), 1):
-                            split_string.insert(split_sub_string_index, replaced_sub_string[split_sub_string_index - sub_string_index])
-                            # split_string.insert(sub_string_index, sub_string_copy[0])
-                            # split_string.insert(sub_string_index + 1, sub_string_copy[1])
-                        search_index = sub_string.find(word_seperator)
+                old_split_string = split_string.copy()
+                split_string = self.split_and_store_original_index(split_string, word_seperator) # array
+                if len(old_split_string) != len(split_string):
+                    no_more_to_split = False
+
+
+        for _, string_entry in enumerate(split_string):
+            string_entry[1] = text_buffer_index_list[string_entry[1]]
+
         return split_string

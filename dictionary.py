@@ -16,7 +16,7 @@ class Dictionary:
         get_dictionary_header_data = self.get_dictionary_header_data()
         self.dictionary = self.get_dictionary_data()
         debug(f"word seperators: {self.word_seperators}", "debug")
-        debug(f"word dictionary (length={self.num_entries}, ({len(self.dictionary)})): {self.dictionary}", "debug")
+        # debug(f"word dictionary (length={self.num_entries}, ({len(self.dictionary)})): {self.dictionary}", "debug")
 
 
     def get_dictionary_header_data(self):
@@ -27,18 +27,28 @@ class Dictionary:
         self.individual_enrty_length = self.extractor.read_byte(dictionary_start_address + num_word_seperators + 1)
         self.num_entries = self.extractor.read_word(dictionary_start_address + num_word_seperators + 2)
         self.dictionary_data_start_address = dictionary_start_address + num_word_seperators + 4
+        self.packed_dictionary_data_start_address = self.dictionary_data_start_address // 2
 
     def get_dictionary_data(self):
         dictionary_entry = []
         dictionary = []
         for dictionary_entry_address in range(self.dictionary_data_start_address, self.dictionary_data_start_address + (self.num_entries * self.individual_enrty_length), self.individual_enrty_length):
             # print(f"{dictionary_entry_address:05x}")
-            dictionary_entry.append(self.extractor.read_string(dictionary_entry_address)) # (4 byte) 2xword z-word entry
-            dictionary_entry.append(self.extractor.read_bytes_as_array(dictionary_entry_address + 4, 3)) # (3 byte) data entry
-            dictionary.append(dictionary_entry)
+            dictionary_string_entry = self.extractor.read_string(dictionary_entry_address)[0] # (4 byte) 2xword z-word entry
+            print(dictionary_string_entry)
+            dictionary_data_entry = (self.extractor.read_bytes_as_array(dictionary_entry_address + 4, 3)) # (3 byte) data entry
+            dictionary.append([dictionary_string_entry, dictionary_data_entry])
             dictionary_entry = []
         return dictionary
     
+    def get_dict_address(self, word):
+        for dict_entry_index, dict_entry in enumerate(self.dictionary):
+            if dict_entry[0] == word:
+                print(f"{(self.packed_dictionary_data_start_address * 2):05x}")
+                dict_entry_address = ((dict_entry_index * 7)) + self.dictionary_data_start_address
+                return dict_entry_address
+        return 0
+
     def parse_split_input(self, split_input):
         parsed_input = []
         return parsed_input
