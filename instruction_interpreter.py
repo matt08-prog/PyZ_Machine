@@ -161,10 +161,12 @@ class InstructionInterpreter:
 
             0x10: self.op_code__load_byte,
             0x30: self.op_code__load_byte,
+            0x50: self.op_code__load_byte,
             0x4F: self.op_code__load_word,
             0x0F: self.op_code__load_word,
             0x6F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
+            0xe2: self.op_code__store_byte,
 
             0x0d: self.op_code__store,
             0x2d: self.op_code__store,
@@ -460,6 +462,24 @@ class InstructionInterpreter:
 
         self.extractor.write_word(dynamic_address_to_store_word_at, result_to_store)
         debug(f"\t\t__store_word stored {result_to_store:02x} into {dynamic_address_to_store_word_at:05x}", "WARNING")
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+
+    def op_code__store_byte(self, instruction, associated_routine):
+        if len(instruction.operands) > 3 or len(instruction.operands) < 3:
+            debug(f"{bcolors.FAIL}op_code__store_word expected 3 operands but got {len(instruction.operands)}")
+            exit(-1)
+
+        result_to_store = instruction.operands[2]
+        # operand 0 is the start of array and operand 1 is the index of the array
+        dynamic_address_to_store_byte_at = instruction.operands[0] + instruction.operands[1]
+
+        # error checking
+        if dynamic_address_to_store_byte_at > self.header.start_of_static_memory:
+            debug(f"{bcolors.FAIL}op_code__store_byte attempted to store a word at ({dynamic_address_to_store_byte_at:05x}) which is past the end of dynamic memory ({self.header.start_of_static_memory:05x})")
+            exit(-1)
+
+        self.extractor.write_byte(dynamic_address_to_store_byte_at, result_to_store)
+        debug(f"\t\t__store_byte stored {result_to_store:02x} into {dynamic_address_to_store_byte_at:05x}", "WARNING")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
     def op_code__store(self, instruction, associated_routine):
@@ -813,8 +833,8 @@ class InstructionInterpreter:
         debug(f"\t\tWill return: {will_return}")
 
     def op_code__read_line_of_user_input (self, instruction, associated_routine):
-        text_memory_buffer_address = instruction.operands[0] * 2
-        parse_memory_buffer_address = instruction.operands[1] * 2
+        text_memory_buffer_address = instruction.operands[0]
+        parse_memory_buffer_address = instruction.operands[1]
 
         max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
         debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
