@@ -114,6 +114,20 @@ def sub_16bit_signed(a, b):
     
     return result
 
+def mul_16bit_signed(a, b):
+    # Ensure inputs are within 16-bit signed range
+    a = a & 0xFFFF
+    b = b & 0xFFFF
+    
+    # Perform addition
+    result = (a * b) & 0xFFFF
+    
+    # Handle sign extension
+    if result & 0x8000:
+        result = result - 0x10000
+    
+    return result
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -145,6 +159,9 @@ class InstructionInterpreter:
 
             0x55: self.op_cod__sub,
 
+            0x56: self.op_cod__mul,
+            0x36: self.op_cod__mul,
+
             0x95: self.op_code__increment,
 
             0xc9: self.op_code__and,
@@ -157,11 +174,14 @@ class InstructionInterpreter:
             0x42: self.op_code__jump_if_less_than,
             0x43: self.op_code__jump_if_greater_than,
             0x05: self.op_code__increment_and_check,
+            0x25: self.op_code__increment_and_check,
+            0x04: self.op_code__decrement_and_check,
             0x8c: self.op_code__jump,
 
             0x10: self.op_code__load_byte,
             0x30: self.op_code__load_byte,
             0x50: self.op_code__load_byte,
+            0x70: self.op_code__load_byte,
             0x4F: self.op_code__load_word,
             0x0F: self.op_code__load_word,
             0x6F: self.op_code__load_word,
@@ -263,6 +283,21 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(difference, result_storage_target, associated_routine)
         debug(f"\t\t__sub instruction puts {minuend:04x} - {subtrahend:04x} = {difference:04x} into {result_storage_target:04x}", "WARNING")
 
+    def op_cod__mul(self, instruction, associated_routine):
+        result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        multiplier = instruction.operands[0]
+        multiplicand = instruction.operands[1]
+        # difference = (minuend - subtrahend) & 0xFF
+
+        product = mul_16bit_signed(multiplier, multiplicand)
+
+        self.routine_interpreter.store_result(product, result_storage_target, associated_routine)
+        debug(f"\t\t__sub instruction puts {multiplier:04x} - {multiplicand:04x} = {product:04x} into {result_storage_target:04x}", "WARNING")
+
     def op_code__increment(self, instruction, associated_routine):
         variable_address = instruction.operands[0]
         variable_value = 0x0000
@@ -289,9 +324,9 @@ class InstructionInterpreter:
         debug(f"\t\top_code__and placed result ({instruction.operands[0]:04x} & {instruction.operands[1]:04x} = {result_to_store:04x} ({result_to_store})) in address {instruction.storage_target:05x}", "WARNING")
 
     def op_code__jump_if_equal(self, instruction, associated_routine):
-        if len(instruction.operands) > 3 or len(instruction.operands) < 2:
-            debug(f"{bcolors.FAIL}op_code__jump_if_equal expected 2 or 3 operands but got {len(instruction.operands)}")
-            exit(-1)
+        # if len(instruction.operands) > 3 or len(instruction.operands) < 2:
+        #     debug(f"op_code__jump_if_equal expected 2 or 3 operands but got {len(instruction.operands)}", "FAIL")
+        #     exit(-1)
         branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
         invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
         address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
@@ -300,7 +335,8 @@ class InstructionInterpreter:
         will_return = False
         will_branch = False
 
-        test_condition = (instruction.operands[0] == instruction.operands[1]) or (instruction.operands[0] == instruction.operands[-1])
+        # test_condition = (instruction.operands[0] == instruction.operands[1]) or (instruction.operands[0] == instruction.operands[-1])
+        test_condition = instruction.operands[0] in instruction.operands[1:]
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
             if branch_info_num_bytes == 1:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
@@ -767,6 +803,71 @@ class InstructionInterpreter:
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n:{z_string_to_print}")
 
+    def op_code__decrement_and_check (self, instruction, associated_routine):
+        variable_address = instruction.operands[0]
+        variable_value = 0x0000
+        
+        if instruction.operand_types[0] != -1: # if the first operand was not a variable, it should be treated as one
+            variable_value = instruction.load_variable(variable_address)
+        else:
+            # The first operand was already treated like a variable
+            variable_address = instruction.original_operands[0]
+            variable_value = instruction.operands[0]
+
+        comaparitor = instruction.operands[1]
+
+        incremented_variable_value = sub_16bit_signed(variable_value, 1)
+
+        self.routine_interpreter.store_result(incremented_variable_value, variable_address, associated_routine)
+
+        branch_info_num_bytes = (0b01000000 & instruction.storage_target == 0) + 1
+        invert_branch_condition = (0b10000000 & instruction.storage_target == 0)
+        address_after_last_branch_info_byte = instruction.storage_target_address + branch_info_num_bytes
+        branch_offset = -1
+
+        will_return = False
+        will_branch = False
+
+        test_condition = (incremented_variable_value > comaparitor)
+        if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
+            if branch_info_num_bytes == 1:
+                branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
+            elif branch_info_num_bytes == 2:
+                unsigned_branch_offset = ((0b00111111 & instruction.storage_target) << 8) | (instruction.branch_target)
+                branch_offset = binary_14_bits_to_signed_int(unsigned_branch_offset)# treat value as signed
+            else:
+                raise Exception("branch info num bytes not between 1 and 2")
+
+            if branch_offset == 0:
+                associated_routine.return_value = False
+                associated_routine.should_return = True
+                will_return = True
+                debug(f"\t\t__decrement_and_check returns False", "WARNING")
+            elif branch_offset == 1:
+                associated_routine.return_value = True
+                associated_routine.should_return = True
+                will_return = True
+                debug(f"\t\t__decrement_and_check returns True", "WARNING")
+            else:
+                will_branch = True
+                associated_routine.next_instruction_offset = address_after_last_branch_info_byte + branch_offset - 2
+                debug(f"\t\t__decrement_and_check branches to {associated_routine.next_instruction_offset:05x}", "WARNING")
+        else:
+            # update address of next instruction
+            debug(f"\t\t__decrement_and_check does not branch", "WARNING")
+            associated_routine.next_instruction_offset = address_after_last_branch_info_byte
+        
+        # Debug info:
+        if branch_info_num_bytes == 1:
+            debug(f"\t\tbranch info byte: {instruction.storage_target:02x}")
+        else:
+            debug(f"\t\tbranch info bytes: {((instruction.storage_target<<8) | instruction.branch_target):04x}")
+        debug(f"\t\tbranch condition inverted: {invert_branch_condition}")
+        debug(f"\t\ttest condition passed: {test_condition}")
+        debug(f"\t\tbranch offset: {branch_offset}")
+        debug(f"\t\tWill branch: {will_branch}")
+        debug(f"\t\tWill return: {will_return}")
+
     def op_code__increment_and_check (self, instruction, associated_routine):
         variable_address = instruction.operands[0]
         variable_value = 0x0000
@@ -839,7 +940,8 @@ class InstructionInterpreter:
         max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
         debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
-        user_input = input()[0:max_number_of_input_letters].lower()
+        # user_input = input()[0:max_number_of_input_letters].lower()
+        user_input = "w"[0:max_number_of_input_letters].lower()
         cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
 

@@ -35,7 +35,7 @@ class Dictionary:
         for dictionary_entry_address in range(self.dictionary_data_start_address, self.dictionary_data_start_address + (self.num_entries * self.individual_enrty_length), self.individual_enrty_length):
             # print(f"{dictionary_entry_address:05x}")
             dictionary_string_entry = self.extractor.read_string(dictionary_entry_address)[0] # (4 byte) 2xword z-word entry
-            print(dictionary_string_entry)
+            # debug(dictionary_string_entry, "debug")
             dictionary_data_entry = (self.extractor.read_bytes_as_array(dictionary_entry_address + 4, 3)) # (3 byte) data entry
             dictionary.append([dictionary_string_entry, dictionary_data_entry])
             dictionary_entry = []
