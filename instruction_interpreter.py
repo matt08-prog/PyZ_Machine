@@ -167,6 +167,8 @@ class InstructionInterpreter:
             0xc9: self.op_code__and,
             0x49: self.op_code__and,
 
+            0x67: self.op_code__test_bitmap_against_flags,
+
             0xa0: self.op_code__jump_if_zero,
             0xc1: self.op_code__jump_if_equal,
             0x61: self.op_code__jump_if_equal,
@@ -267,6 +269,14 @@ class InstructionInterpreter:
 
         self.routine_interpreter.store_result(sum, result_storage_target, associated_routine)
         debug(f"\t\t__add instruction puts {augend:04x} + {addend:04x} = {sum:04x} into {result_storage_target:04x}", "WARNING")
+
+    def op_code__test_bitmap_against_flags(self, instruction, associated_routine):
+        bitmap = instruction.operands[0]
+        flags = instruction.operands[0]
+
+        test_condition = (bitmap & flags) == flags
+
+        self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, False, "__test_bitmap_against_flags")
 
     def op_cod__sub(self, instruction, associated_routine):
         result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
@@ -828,7 +838,7 @@ class InstructionInterpreter:
         will_return = False
         will_branch = False
 
-        test_condition = (incremented_variable_value > comaparitor)
+        test_condition = (incremented_variable_value < comaparitor)
         if (test_condition and not invert_branch_condition) or (not test_condition and invert_branch_condition):
             if branch_info_num_bytes == 1:
                 branch_offset = 0b00111111 & instruction.storage_target # first byte after list of operands
