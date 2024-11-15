@@ -42,9 +42,10 @@ class Dictionary:
         return dictionary
     
     def get_dict_address(self, word):
+        shortened_word = word[0:5]
         for dict_entry_index, dict_entry in enumerate(self.dictionary):
-            if dict_entry[0] == word:
-                print(f"{(self.packed_dictionary_data_start_address * 2):05x}")
+            if dict_entry[0] == shortened_word:
+                # print(f"{(self.packed_dictionary_data_start_address * 2):05x}")
                 dict_entry_address = ((dict_entry_index * 7)) + self.dictionary_data_start_address
                 return dict_entry_address
         return 0

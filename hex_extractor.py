@@ -198,7 +198,6 @@ class HexExtractor:
             # print(f"set final z_word bit when there were {len(z_characters)} characters left")
             current_z_word |= 0x80 # set final word bit
 
-
         while len(z_characters) > 0:
             current_z_character = z_characters.pop(0)
             assert(current_z_character == current_z_character & 0b11111) # make sure each z character is 5 bytes long
@@ -247,8 +246,9 @@ class HexExtractor:
                         final_array.insert(string_entry_index, [before_split_char, string_entry_copy[1]])
                         offset += 1
 
-                    final_array.insert(string_entry_index + offset, [split_char, string_entry_copy[1] + search_index]) # the split_char
-                    offset += 1
+                    if split_char != " ":
+                        final_array.insert(string_entry_index + offset, [split_char, string_entry_copy[1] + search_index]) # the split_char
+                        offset += 1
 
                     after_split_char = string_entry_copy[0][search_index+1:] # the portion of the string after the split_char
                     if len(after_split_char) > 0:

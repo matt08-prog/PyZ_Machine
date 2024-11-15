@@ -855,13 +855,11 @@ class InstructionInterpreter:
         parse_buffer_index = 2
         for word_entry in split_input:
             dictionary_address = self.routine_interpreter.dictionary.get_dict_address(word_entry[0]) # not stored as packed because not always even
-            print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
-            self.extractor.write_word(parse_memory_buffer_address + parse_buffer_index, dictionary_address)
-            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 2, len(word_entry[0]))
-            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 3, word_entry[1])
+            # print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
+            self.extractor.write_word(parse_memory_buffer_address + parse_buffer_index, dictionary_address) # byte address of dictionary entry
+            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 2, len(word_entry[0])) # number of letters in the word
+            self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 3, word_entry[1]) # position of the first char in text buffer
             parse_buffer_index += 4
-
-        
 
         # parsed_input = self.routine_interpreter.dictionary.parse_split_input(split_input)
         associated_routine.next_instruction_offset = instruction.storage_target_address
