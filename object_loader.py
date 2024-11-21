@@ -105,6 +105,7 @@ class ObjectLoader:
             num_property_bytes = (size_byte >> 5) + 1
             properties.append({
             "property_number": property_number,
+            "property_address": starting_address + 1 + property_index,
             # stored as an array
             "property_data": self.extractor.read_bytes_as_array(starting_address + 1 + property_index, num_property_bytes)
                 })
@@ -185,9 +186,17 @@ class ObjectLoader:
         object = self.find_object(object_number)
         return object.sibling
 
-    def get_object_property(self, object_number, property_number):
+    def get_object_property_data(self, object_number, property_number):
         object = self.find_object(object_number)
-        property = object.get_property(property_number)
+        property = object.get_property_data(property_number)
+        if property == -1:
+            property = self.default_properties[property_number]
+            # may need to turn the default properties into an array
+        return property
+    
+    def get_object_property_address(self, object_number, property_number):
+        object = self.find_object(object_number)
+        property = object.get_property_address(property_number)
         if property == -1:
             property = self.default_properties[property_number]
             # may need to turn the default properties into an array

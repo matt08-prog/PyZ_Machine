@@ -89,6 +89,13 @@ class HexExtractor:
             result.append(byte)
         return result
 
+    def num_bytes_until_0(self, starting_address):
+        num_bytes = 0
+        while True:
+            if self.read_byte(starting_address + num_bytes) == 0:
+                return num_bytes
+            num_bytes += 1
+
     def load_abreviator(self, abreviator_table):
         self.abreviator_table = abreviator_table
 

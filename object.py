@@ -33,11 +33,19 @@ class Object:
         if not object_has_given_property:
             raise Exception(f"Object number {self.object_number}: does not have {property_number}, halting execution")
 
-    def get_property(self, property_number):
+    def get_property_data(self, property_number):
         property_value = -1
         for property in self.properties:
             if property["property_number"] == property_number:
                 property_value = property["property_data"]
+
+        return property_value
+
+    def get_property_address(self, property_number):
+        property_value = -1
+        for property in self.properties:
+            if property["property_number"] == property_number:
+                property_value = property["property_address"]
 
         return property_value
 

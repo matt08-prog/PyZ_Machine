@@ -4,6 +4,9 @@ from instruction import Instruction
 from routine import Routine
 from debuger import debug
 from unicodedata import normalize
+import random
+import time
+
 
  # should be moved to global variable file with helper functions
  #      should also be merged with two functions below it into one function that lets you specify the number of bits
@@ -175,9 +178,11 @@ class InstructionInterpreter:
 
             0xa0: self.op_code__jump_if_zero,
             0xc1: self.op_code__jump_if_equal,
-            0x61: self.op_code__jump_if_equal,
+            0x21: self.op_code__jump_if_equal,
             0x41: self.op_code__jump_if_equal,
+            0x61: self.op_code__jump_if_equal,
             0x42: self.op_code__jump_if_less_than,
+            0x23: self.op_code__jump_if_greater_than,
             0x43: self.op_code__jump_if_greater_than,
             0x05: self.op_code__increment_and_check,
             0x25: self.op_code__increment_and_check,
@@ -193,19 +198,26 @@ class InstructionInterpreter:
             0x6F: self.op_code__load_word,
             0xe1: self.op_code__store_word,
             0xe2: self.op_code__store_byte,
+            0xe8: self.op_code__push_value_to_stack,
 
             0x0d: self.op_code__store,
             0x2d: self.op_code__store,
 
             0xe3: self.op_code__put_prop,
+            0x26: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
+            0x0a: self.op_code__test_attribute,
             0x4a: self.op_code__test_attribute,
             0x4b: self.op_code__set_attribute,
             0x51: self.op_code__get_property,
+            0x72: self.op_code__get_address_of_property,
             0xa1: self.op_code__get_sibling_of_object,
             0xa2: self.op_code__get_child_of_object,
+            0x93: self.op_code__get_parent_of_object,
             0xa3: self.op_code__get_parent_of_object,
+            0xa4: self.op_code__get_length_of_property,
             0x4c: self.op_code__clear_attribute,
+            0x2e: self.op_code__add_object,
             0x6e: self.op_code__add_object,
             0xaa: self.op_code__print_object,
 
@@ -215,12 +227,14 @@ class InstructionInterpreter:
             0xb8: self.op_code__return_popped_top_of_stack,
 
             0xb2: self.op_code__print,
+            0xb3: self.op_code__print_then_return_true,
             0xe5: self.op_code__print_char,
             0xe6: self.op_code__print_num,
             0xad: self.op_code__print_string_at_packed_address,
             0xbb: self.op_code__new_line,
 
             0xe4: self.op_code__read_line_of_user_input,
+            0xe7: self.op_code__random,
             }
 
     def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
@@ -532,6 +546,13 @@ class InstructionInterpreter:
         debug(f"\t\t__store_byte stored {result_to_store:02x} into {dynamic_address_to_store_byte_at:05x}", "WARNING")
         associated_routine.next_instruction_offset = instruction.storage_target_address
 
+    def op_code__push_value_to_stack(self, instruction, associated_routine):
+        value_to_store = instruction.operands[0]
+
+        self.routine_interpreter.store_result(value_to_store, 0x00, associated_routine)
+        debug(f"\t\t__push_value_to_stack pushed 0x{value_to_store:02x} to the stack", "WARNING")
+        associated_routine.next_instruction_offset = instruction.storage_target_address
+
     def op_code__store(self, instruction, associated_routine):
         value_to_store = instruction.operands[1]
         variable_store_destination = instruction.operands[0]
@@ -551,6 +572,8 @@ class InstructionInterpreter:
         self.object_loader.put_value_in_property(object_number, property_number, value)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__put_prop placed property_number #{property_number} in object #{object_number}")
+        if object_number == 64:
+            pass
 
 
     def branch_if_test_condition_passes(self, instruction, associated_routine, test_condition, has_storage_target, op_code_name):
@@ -675,7 +698,7 @@ class InstructionInterpreter:
     def op_code__get_property(self, instruction, associated_routine):
         object_number = instruction.operands[0]
         property_number = instruction.operands[1]
-        property_data_array = self.object_loader.get_object_property(object_number, property_number)
+        property_data_array = self.object_loader.get_object_property_data(object_number, property_number)
         property_value = 0
 
         if len(property_data_array) == 1:
@@ -686,11 +709,36 @@ class InstructionInterpreter:
         storage_target = instruction.storage_target
 
         if (len(property_data_array) not in [1, 2]):
-            debug(f"\t\t{bcolors.FAIL}property #{property_number} (whose value is {property_value} has an erroneous length of {len(property_value)})")
+            debug(f"\t\t{bcolors.FAIL}property #{property_number} (whose value is {property_value} has an erroneous length of {len(property_value)})", "WARNING")
             exit(-1)
 
-        debug(f"\t\t__get_property found object #{object_number} has property #{property_number} (whose value is {property_value} ({property_value:04x}))")
+        debug(f"\t\t__get_property found object #{object_number} has property #{property_number} (whose value is 0x{property_value:04x} ({property_value}))", "WARNING")
         self.routine_interpreter.store_result(property_value, storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+
+    def op_code__get_address_of_property(self, instruction, associated_routine):
+        object_number = instruction.operands[0]
+        property_number = instruction.operands[1]
+        property_address = self.object_loader.get_object_property_address(object_number, property_number)
+
+
+        storage_target = instruction.storage_target
+
+        debug(f"\t\t__get_address_of_property found object #{object_number} has property #{property_number} (whose address is 0x{property_address:04x} ({property_address}))", "WARNING")
+        self.routine_interpreter.store_result(property_address, storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+
+    def op_code__get_length_of_property(self, instruction, associated_routine):
+        property_address = instruction.operands[0]
+        property_length = 0
+
+        if property_address != 0:
+            property_length = (self.extractor.read_byte(property_address - 1) >> 5) + 1
+
+        storage_target = instruction.storage_target
+
+        debug(f"\t\t__get_length_of_property found property at 0x{property_address:04x} has a length of {property_length} bytes", "WARNING")
+        self.routine_interpreter.store_result(property_length, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
 
     # Get next object in tree, branching if this exists, i.e. is not 0.
@@ -794,6 +842,16 @@ class InstructionInterpreter:
         final_address_after_string = HexExtractor_read_string_object[1]
         associated_routine.next_instruction_offset = final_address_after_string
         debug(f"\t\t__print printed\n:{string_to_print}", "CYAN")
+
+    def op_code__print_then_return_true(self, instruction, associated_routine):
+        HexExtractor_read_string_object = self.extractor.read_string(instruction.storage_target_address, self.abreviator.abreviations_table)
+        string_to_print = HexExtractor_read_string_object[0]
+        final_address_after_string = HexExtractor_read_string_object[1]
+        associated_routine.next_instruction_offset = final_address_after_string
+        associated_routine.should_return = True
+        associated_routine.return_value = True
+
+        debug(f"\t\t__print_then_return_true printed\n:{string_to_print}\n", "CYAN")
 
 
     def op_code__new_line(self, instruction, associated_routine):
@@ -949,6 +1007,26 @@ class InstructionInterpreter:
         debug(f"\t\tbranch offset: {branch_offset}")
         debug(f"\t\tWill branch: {will_branch}")
         debug(f"\t\tWill return: {will_return}")
+
+
+    def op_code__random (self, instruction, associated_routine):
+        
+        range_value = instruction.operands[0]
+        result_to_store = 0
+        if range_value > 0:
+            result_to_store = random.randrange(0, range_value)
+        elif range_value < 0:
+            random.seed(range_value)
+        elif range_value == 0:
+            random.seed(round(time.time() * 1000))
+        storage_target = instruction.storage_target
+
+        # assert(len(z_words) == len(user_input))
+
+        
+        self.routine_interpreter.store_result(result_to_store, storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
+        debug(f"\t\t__random returned random value {result_to_store} from the range [0, {range_value}]", "WARNING")
 
     def op_code__read_line_of_user_input (self, instruction, associated_routine):
         text_memory_buffer_address = instruction.operands[0]
