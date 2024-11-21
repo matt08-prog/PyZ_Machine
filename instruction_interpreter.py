@@ -11,8 +11,8 @@ import time
  # should be moved to global variable file with helper functions
  #      should also be merged with two functions below it into one function that lets you specify the number of bits
 def binary_word_16_bits_to_signed_int(binary_value):
-    debug(f"\t\t\tbinary_to_signed_int")
-    debug(f"\t\t\t binary value: {binary_value}")
+    debug(f"\t\t\tbinary_to_signed_int", "debug")
+    debug(f"\t\t\t binary value: {binary_value}", "debug")
     binary_str = bin(binary_value)
     if binary_str[0] == "-":
         return binary_value
@@ -22,7 +22,7 @@ def binary_word_16_bits_to_signed_int(binary_value):
     # Remove any spaces from the binary string
     binary_str = binary_str.replace(" ", "")
     
-    debug(f"\t\t\t binary string: {binary_str}")
+    debug(f"\t\t\t binary string: {binary_str}", "debug")
     # Get the length of the binary string
     num_bits = 16
     
@@ -33,7 +33,7 @@ def binary_word_16_bits_to_signed_int(binary_value):
     if num & (1 << (num_bits - 1)):
         # The only time we should ever get here is if this is the first time the interpreter is looking at this value
         num -= 1 << num_bits
-    debug(f"\t\t\tfinal value: {num}")
+    debug(f"\t\t\tfinal value: {num:016b}", "debug")
     return num
 
 def binary_14_bits_to_signed_int(binary_value): # should be moved to global variable file with helper functions
@@ -154,7 +154,7 @@ class InstructionInterpreter:
         self.time_stamp = 0
 
         self.global_index = 0
-        self.should_get_user_input = False
+        self.should_get_user_input = True
 
 
         # this opcode table should actually call functions from a seperate op_code interpreter class
@@ -206,17 +206,21 @@ class InstructionInterpreter:
             0xe3: self.op_code__put_prop,
             0x26: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
+            0x66: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x0a: self.op_code__test_attribute,
             0x4a: self.op_code__test_attribute,
+            0x0b: self.op_code__set_attribute,
             0x4b: self.op_code__set_attribute,
+            0x0c: self.op_code__clear_attribute,
+            0x4c: self.op_code__clear_attribute,
             0x51: self.op_code__get_property,
             0x72: self.op_code__get_address_of_property,
             0xa1: self.op_code__get_sibling_of_object,
+            0x92: self.op_code__get_child_of_object,
             0xa2: self.op_code__get_child_of_object,
             0x93: self.op_code__get_parent_of_object,
             0xa3: self.op_code__get_parent_of_object,
             0xa4: self.op_code__get_length_of_property,
-            0x4c: self.op_code__clear_attribute,
             0x2e: self.op_code__add_object,
             0x6e: self.op_code__add_object,
             0xaa: self.op_code__print_object,
@@ -873,10 +877,10 @@ class InstructionInterpreter:
 
     def op_code__print_string_at_packed_address (self, instruction, associated_routine):
         packed_address = instruction.operands[0] * 2
-        z_string_to_print = self.extractor.read_string(packed_address)
+        z_string_to_print = self.extractor.read_string(packed_address)[0]
         
+        debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n:{z_string_to_print}", "CYAN")
         associated_routine.next_instruction_offset = instruction.storage_target_address
-        debug(f"\t\t__print printed the following z-string {instruction.operands[0]:04x} from address {packed_address:05x}\n:{z_string_to_print}")
 
     def op_code__decrement_and_check (self, instruction, associated_routine):
         variable_address = instruction.operands[0]
@@ -1039,6 +1043,7 @@ class InstructionInterpreter:
             user_input = "w"[0:max_number_of_input_letters].lower()
         else:
             user_input = input()[0:max_number_of_input_letters].lower()
+            debug(f"\n","CYAN_no_z_string")
                 
         cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
@@ -1048,8 +1053,8 @@ class InstructionInterpreter:
         z_word_and_text_buffer_index_list_object = self.extractor.z_characters_to_z_words_and_text_buffer_index_list(z_characters, cleaned_user_input)
         z_words = z_word_and_text_buffer_index_list_object[0]
         text_buffer_index_list = z_word_and_text_buffer_index_list_object[1]
-        print(f"text_buffer_index_list {text_buffer_index_list}")
-        print(f"z_chars {z_characters}")
+        debug(f"text_buffer_index_list {text_buffer_index_list}")
+        debug(f"z_chars {z_characters}","debug")
         # print(f"z_words {z_words}")
         def int_to_binary(n, width=15):
             return f'{n:0{width}b}'

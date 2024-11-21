@@ -13,7 +13,7 @@ from dictionary import Dictionary
 import argparse
 
 def main():
-    max_time_step = 0
+    max_time_step = -1
 
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
@@ -21,7 +21,7 @@ def main():
     parser.add_argument("-x", "--hexdump", action="store_true", help="Write hexdump of input to a file")
     parser.add_argument("-mts", "--should_look_for_max_time_step", action="store_true", help="Write hexdump of input to a file")
     parser.add_argument("input_file", help="Input file to process")
-    parser.add_argument("max_time_step", help="maximum number of instructions to process")
+    parser.add_argument("max_time_step", nargs='?', default=-1, help="maximum number of instructions to process")
 
     args = parser.parse_args()
 
@@ -30,8 +30,7 @@ def main():
     input_file = args.input_file
     if args.should_look_for_max_time_step:
         max_time_step = int(args.max_time_step)
-    else:
-        max_time_step = 0
+    
     output_file = f"{input_file}_hex_dump.txt"
 
 

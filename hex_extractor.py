@@ -73,6 +73,7 @@ class HexExtractor:
         return (int(self.hex_data[address][1], base =16) << 8) | (int(self.hex_data[address+1][1], base=16))
 
     def read_byte(self, address):
+        # print(self.hex_data[0xfa17])
         return int(self.hex_data[address][1], base=16)
 
     def read_bytes(self, address, n):
@@ -266,7 +267,7 @@ class HexExtractor:
     def split_input_string(self, input_string, text_buffer_index_list):
         # starting_string = input_string.replace("\xa0", " ")
         starting_string = [[input_string.replace("\'", r"'"), 0]]
-        print(f"starting_string: {starting_string}")
+        debug(f"starting_string: {starting_string}","debug")
         # split_string = starting_string.split(" ") # array
         split_string = self.split_and_store_original_index(starting_string, " ") # array
         word_seperators = ["\"", ",", "."]

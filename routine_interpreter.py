@@ -63,7 +63,7 @@ class RoutineInterpreter:
         debug(f"routine's local vars: {list(map(hex, routine.local_vars))}", "debug")
         while True:
             self.time_stamp += 1
-            if self.time_stamp > self.max_time_step:
+            if self.time_stamp > self.max_time_step and self.max_time_step != -1:
                 # debug exit, otherwise it tries to return from all routines at end of simulation
                 exit(-1)
             next_instruction = routine.read_next_instruction()

@@ -48,4 +48,7 @@ def debug(debug_string, severity_string="unclassified_severity", end_string="\n"
             debug_string = debug_string[start_index:]
             # debug_string = debug_string.replace(":", "")
             print(f"{bcolors[severity_string]}{debug_string}{bcolors["ENDC"]}", end="")
+        elif (severity_string == "CYAN_no_z_string"):
+            print(f"{bcolors["CYAN"]}{debug_string}{bcolors["ENDC"]}", end="")
+
 
