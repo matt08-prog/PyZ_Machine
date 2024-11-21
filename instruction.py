@@ -86,7 +86,7 @@ class Instruction:
     
     def load_variable(self, load_target, should_pop_stack=False):
         if (load_target == 0x00):
-            debug(f"\t\tload ({self.routine_interpreter.stack[-1]:02x}) from top of stack", "FAIL")
+            debug(f"\t\tload 0x{self.routine_interpreter.stack[-1]:02x} ({self.routine_interpreter.stack[-1]}) from top of stack", "FAIL")
             stack_value = self.routine_interpreter.stack[-1]
             if should_pop_stack:
                 # print(f"length before poping {len(self.routine_interpreter.stack)}")
@@ -94,10 +94,10 @@ class Instruction:
                 # print(f"length after poping {len(self.routine_interpreter.stack)}")
             return stack_value
         elif (load_target > 0x00 and load_target < 0x10): # 0x01 to 0xf0 are meant for local vars
-            debug(f"\t\tload ({self.current_routine.local_vars[load_target - 1]:02x}) from local var ({(load_target - 1):02x})", "FAIL")
+            debug(f"\t\tload 0x{self.current_routine.local_vars[load_target - 1]:02x} ({self.current_routine.local_vars[load_target - 1]}) from local var 0x{(load_target - 1):02x} ({(load_target - 1)})", "FAIL")
             return self.current_routine.local_vars[load_target - 1]
         elif (load_target > 0x0f and load_target < 0x100): # 0x10 to 0xff are meant for global_vars
-            debug(f"\t\tload ({self.routine_interpreter.global_vars[load_target - 0x10]:02x}) from global var (0x{(load_target - 0x10):02x} ({load_target - 0x10}))", "FAIL")
+            debug(f"\t\tload 0x{self.routine_interpreter.global_vars[load_target - 0x10]:02x} ({self.routine_interpreter.global_vars[load_target - 0x10]}) from global var 0x{(load_target - 0x10):02x} ({load_target - 0x10})", "FAIL")
             return self.routine_interpreter.global_vars[load_target - 0x10]
         else:
             debug(f"\t\tload variable {load_target} is out of bounds", "FAIL")

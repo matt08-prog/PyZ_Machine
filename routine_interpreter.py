@@ -96,17 +96,17 @@ class RoutineInterpreter:
     def store_result(self, result_to_store, storage_target, current_routine):
             if (storage_target == 0x00):
                 self.stack.append(result_to_store)
-                debug(f"\t\tPushed {result_to_store:02x} onto the stack", "GREEN")
+                debug(f"\t\tPushed 0x{result_to_store:02x} onto the stack", "GREEN")
 
             elif (storage_target > 0x00 and storage_target < 0x10): # 0x01 to 0xf0 are meant for local vars
                 current_routine.local_vars[storage_target - 1] = result_to_store
-                debug(f"\t\t{result_to_store:02x} placed in local var {storage_target - 1}", "GREEN")
+                debug(f"\t\t0x{result_to_store:02x} placed in local var 0x{(storage_target - 1):03x} ({storage_target - 1})", "GREEN")
 
             elif (storage_target > 0x0f and storage_target < 0x100): # 0x10 to 0xff are meant for global_vars
                 self.global_vars[storage_target - 0x10] = result_to_store
-                debug(f"\t\t{result_to_store:02x} placed in global var {storage_target - 0x10}", "GREEN")
-                if storage_target - 0x10 == 130:
-                    debug(f"\t\t{result_to_store:02x} placed in global var {storage_target - 0x10}", "GREEN")
+                debug(f"\t\t0x{result_to_store:02x} placed in global var 0x{(storage_target - 0x10):03x} {(storage_target - 0x10)}", "GREEN")
+                if storage_target - 0x10 == 139:
+                    debug(f"\t\t0x{result_to_store:02x} placed in global var 0x{(storage_target - 0x10):03x} {(storage_target - 0x10)}", "GREEN")
             else:
                 debug(f"\t\tStorage target {storage_target} is out of bounds!", "GREEN")
                 exit(-1)

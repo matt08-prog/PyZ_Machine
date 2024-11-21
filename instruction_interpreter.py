@@ -150,6 +150,10 @@ class InstructionInterpreter:
 
         self.time_stamp = 0
 
+        self.global_index = 0
+        self.should_get_user_input = False
+
+
         # this opcode table should actually call functions from a seperate op_code interpreter class
         self.opcode_table = {
             0xe0: self.op_code__call, 
@@ -719,8 +723,8 @@ class InstructionInterpreter:
         storage_target = instruction.storage_target
         self.routine_interpreter.store_result(parent_object_number, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
-        debug(f"\t\t__get_parent_of_object found object #{object_number} has parent #{parent_object_number}", "WARNING")
-        debug(f"\t\t__get_parent_of_object found object #{object_number} has parent #{parent_object_number}", "WARNING")
+        debug(f"\t\t__get_parent_of_object found object \"{self.object_loader.get_object_description(object_number)[0]}\" (#{object_number}) has parent \"{self.object_loader.get_object_description(parent_object_number)[0]}\" (#{parent_object_number})", "WARNING")
+        pass
 
     def op_code__clear_attribute(self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -741,13 +745,16 @@ class InstructionInterpreter:
             debug(f"\t\tobject #{object_a_number} is the direct child of object #{object_b_number} ", "WARNING")
         else:
             debug(f"\t\tobject #{object_a_number} is not the direct child of object #{object_b_number} ", "WARNING")
-
+    
     def op_code__add_object(self, instruction, associated_routine):
+        # self.global_index += 1
         object_to_be_moved = instruction.operands[0]
         object_destination = instruction.operands[1]
         self.object_loader.insert_object(object_to_be_moved, object_destination)
-        debug(f"\t\t__add_object moved object {object_to_be_moved} to {object_destination}", "WARNING")
+        debug(f"\t\t__add_object moved object \"{self.object_loader.get_object_description(object_to_be_moved)[0]}\" (#{object_to_be_moved}) to \"{self.object_loader.get_object_description(object_destination)[0]}\" (#{object_destination})", "WARNING")
         associated_routine.next_instruction_offset = instruction.storage_target_address
+        # if self.global_index > 1:
+        #     exit(-1)
 
     def op_code__print_object (self, instruction, associated_routine):
         object_number = instruction.operands[0]
@@ -950,8 +957,11 @@ class InstructionInterpreter:
         max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
         debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
-        # user_input = input()[0:max_number_of_input_letters].lower()
-        user_input = "w"[0:max_number_of_input_letters].lower()
+        if not self.should_get_user_input:
+            user_input = "w"[0:max_number_of_input_letters].lower()
+        else:
+            user_input = input()[0:max_number_of_input_letters].lower()
+                
         cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
 
