@@ -13,7 +13,7 @@ class ObjectLoader:
         self.objects = self.load_objects()
         self.default_properties = self.load_default_properties()
         debug(f"default_properties = {self.default_properties}", "debug")
-        self.fix_object_graph()
+        self.normalize_object_graph()
 
     def load_objects(self):
         objects = [Object(0)]
@@ -33,8 +33,7 @@ class ObjectLoader:
         
         return objects
     
-    def fix_object_graph(self):
-
+    def normalize_object_graph(self):
         for object_to_append in self.objects:
             # print(f"fixing object {object_to_append.object_number}")
             object_child_index = object_to_append.child

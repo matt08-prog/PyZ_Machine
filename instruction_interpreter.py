@@ -226,6 +226,8 @@ class InstructionInterpreter:
             0xaa: self.op_code__print_object,
 
             0xab: self.op_code__return,
+            0x8b: self.op_code__return,
+            0x9b: self.op_code__return,
             0xb0: self.op_code__return_true,
             0xb1: self.op_code__return_false,
             0xb8: self.op_code__return_popped_top_of_stack,

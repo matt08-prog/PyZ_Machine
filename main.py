@@ -1,5 +1,6 @@
 # main.py
 
+import threading
 from hex_extractor import HexExtractor
 from file_exporter import FileExporter
 from abreviator import Abreviator
@@ -9,12 +10,29 @@ from instruction import Instruction
 from routine_interpreter import RoutineInterpreter
 from object_loader import ObjectLoader
 from dictionary import Dictionary
+from GUI import GUI
+from queue import Queue 
 
 import argparse
 
 def main():
-    max_time_step = -1
+    q = Queue()
+    gui = GUI()
+    # main_loop_thread = threading.Thread(target=main_loop(q))
+    main_loop_thread = threading.Thread(target=main_loop, args=(q, ))
+    # gui_loop_thread = threading.Thread(target=gui.init_GUI(q))
+    gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(q, ))
+    main_loop_thread.start()
+    gui_loop_thread.start()
 
+    
+
+    print("test")
+
+
+def main_loop(gui=None):
+    max_time_step = -1
+    print(gui)
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
     parser.add_argument("-a", "--abbreviations", action="store_true", help="Output abbreviations table")
@@ -50,6 +68,7 @@ def main():
     objectLoader = ObjectLoader(extractor, header)
     # print()
     routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator, dictionary)
+
     # extractor.load_abreviator(abreviator.abreviations_table)
 
     # Export hex data to file
