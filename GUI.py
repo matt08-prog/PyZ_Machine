@@ -1,5 +1,7 @@
 import os
+import queue
 import threading
+from time import sleep
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
@@ -7,11 +9,11 @@ class GUI:
     def __init__(self):
         pass
 
-    def init_GUI(self, queue):
-        self.queu = queue
+    def init_GUI(self, queue, should_ask_before_closing_window):
+        self.queue = queue
 
         root = tk.Tk()
-        root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(root))
+        root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(root, should_ask_before_closing_window))
         gui = DualPanelGUI(root)
 
         # Example usage of add_text function
@@ -23,20 +25,35 @@ class GUI:
         gui.right_panel.tag_config("white", foreground="white")
         gui.right_panel.tag_config("red", foreground="red")
 
-        self.run_gui(root)
+        self.run_gui(root, gui)
         print("after thread start")
 
-
-    def run_gui(self, root):
-        while 1:
-            # root.mainloop()
-            root.update()
-            # exit(-1)
+    def run_gui(self, root, gui):
+        def update():
+            try:
+                # consume data from main thread
+                data = self.queue.get(False)
+                gui.add_text("left", data, "green")
+            except queue.Empty:
+                pass
             
-            # print("after mainloop start")
+            # Schedule the next update
+            root.after(200, update)
 
-    def on_closing(self, root):
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        # Start the update cycle
+        update()
+        
+        # Start the Tkinter main loop
+        root.mainloop()
+
+
+
+    def on_closing(self, root, should_ask):
+        if should_ask:
+            if messagebox.askokcancel("Quit", "Do you want to quit?"):
+                root.destroy()
+                os._exit(1)
+        else:
             root.destroy()
             os._exit(1)
 

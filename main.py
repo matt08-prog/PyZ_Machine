@@ -11,17 +11,19 @@ from routine_interpreter import RoutineInterpreter
 from object_loader import ObjectLoader
 from dictionary import Dictionary
 from GUI import GUI
-from queue import Queue 
+import queue 
 
 import argparse
 
+should_ask_before_closing_window = False
+
 def main():
-    q = Queue()
+    q = queue.Queue()
     gui = GUI()
     # main_loop_thread = threading.Thread(target=main_loop(q))
     main_loop_thread = threading.Thread(target=main_loop, args=(q, ))
     # gui_loop_thread = threading.Thread(target=gui.init_GUI(q))
-    gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(q, ))
+    gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(q, should_ask_before_closing_window, ))
     main_loop_thread.start()
     gui_loop_thread.start()
 
@@ -30,9 +32,9 @@ def main():
     print("test")
 
 
-def main_loop(gui=None):
+def main_loop(gui_text_queue=None):
     max_time_step = -1
-    print(gui)
+    gui_text_queue.put("test_string")
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
     parser.add_argument("-a", "--abbreviations", action="store_true", help="Output abbreviations table")
