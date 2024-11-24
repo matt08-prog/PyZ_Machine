@@ -115,7 +115,7 @@ class HexExtractor:
         if character_code > 31 and character_code < 127:
             return chr(character_code)
         else:
-            return "__unknown ZSCII character, may not yet be implemented__"
+            return f"__unknown ZSCII character (character code: {character_code}), may not yet be implemented__"
 
     def read_string(self, base_address, abreviations_table=None):
         current_address = base_address
@@ -284,7 +284,7 @@ class HexExtractor:
         word_seperators = ["\"", ",", "."]
 
         # split_string = [element for _, element in enumerate(split_string) if element != ""]
-        # print(f"First split string = {split_string}")
+        print(f"First split string = {split_string}")
         no_more_to_split = False
         index = 0
 
@@ -296,9 +296,9 @@ class HexExtractor:
             for word_seperator in word_seperators:
                 old_split_string = split_string.copy()
                 split_string = self.split_and_store_original_index(split_string, word_seperator) # array
+                # print(split_string)
                 if len(old_split_string) != len(split_string):
                     no_more_to_split = False
-
 
         for _, string_entry in enumerate(split_string):
             string_entry[1] = text_buffer_index_list[string_entry[1]]

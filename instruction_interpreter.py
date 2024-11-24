@@ -190,6 +190,8 @@ class InstructionInterpreter:
             0x42: self.op_code__jump_if_less_than,
             0x23: self.op_code__jump_if_greater_than,
             0x43: self.op_code__jump_if_greater_than,
+            0x63: self.op_code__jump_if_greater_than,
+            0xc3: self.op_code__jump_if_greater_than,
             0x05: self.op_code__increment_and_check,
             0x25: self.op_code__increment_and_check,
             0x04: self.op_code__decrement_and_check,
@@ -1047,16 +1049,16 @@ class InstructionInterpreter:
         max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
         debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
+        # get user input
         if not self.should_get_user_input:
             user_input = "w"[0:max_number_of_input_letters].lower()
         else:
             debug(f"waiting for user input", "scroll")
             user_input = input()[0:max_number_of_input_letters].lower()
             debug(f"\n","CYAN_no_z_string")
-                
         cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
-
+        # convert input to z_characters
         z_characters = self.extractor.string_to_z_characters(cleaned_user_input)
 
         z_word_and_text_buffer_index_list_object = self.extractor.z_characters_to_z_words_and_text_buffer_index_list(z_characters, cleaned_user_input)
@@ -1077,19 +1079,21 @@ class InstructionInterpreter:
         self.extractor.write_array_of_words(text_memory_buffer_address + 2, z_words) # write z_words to text buffer starting at byte 3
 
 
-        debug(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ", "WARNING")
-        debug(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})", "debug")
-        # assert(len(z_words) == len(user_input))
+        # debug(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ", "WARNING")
+        print(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ")
+        # debug(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})", "debug")
+        print(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})")
 
         max_number_of_textual_words_to_be_parsed = self.extractor.read_byte(parse_memory_buffer_address)
         split_input = self.extractor.split_input_string(cleaned_user_input, text_buffer_index_list)
-        debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
+        # debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
+        print(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ")
 
         self.extractor.write_byte(parse_memory_buffer_address + 1, len(split_input))
         parse_buffer_index = 2
         for word_entry in split_input:
             dictionary_address = self.routine_interpreter.dictionary.get_dict_address(word_entry[0]) # not stored as packed because not always even
-            # print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
+            print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
             self.extractor.write_word(parse_memory_buffer_address + parse_buffer_index, dictionary_address) # byte address of dictionary entry
             self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 2, len(word_entry[0])) # number of letters in the word
             self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 3, word_entry[1]) # position of the first char in text buffer
