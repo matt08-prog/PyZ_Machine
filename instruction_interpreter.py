@@ -1,4 +1,5 @@
 # instruction_interpreter.py
+import os
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
@@ -135,6 +136,20 @@ def mul_16bit_signed(a, b):
     
     return result
 
+def div_16bit_signed(a, b):
+    # Ensure inputs are within 16-bit signed range
+    a = a & 0xFFFF
+    b = b & 0xFFFF
+    
+    # Perform addition
+    result = int(a / b) & 0xFFFF
+    
+    # Handle sign extension
+    if result & 0x8000:
+        result = result - 0x10000
+    
+    return result
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -167,8 +182,11 @@ class InstructionInterpreter:
         self.opcode_table = {
             0xe0: self.op_code__call, 
 
+            0x14: self.op_code__add, 
+            0x34: self.op_code__add, 
             0x54: self.op_code__add, 
-            0x74: self.op_code__add,
+            0x74: self.op_code__add, 
+            0xd4: self.op_code__add,
 
             0x15: self.op_cod__sub,
             0x35: self.op_cod__sub,
@@ -179,12 +197,22 @@ class InstructionInterpreter:
             0x56: self.op_cod__mul,
             0x36: self.op_cod__mul,
 
+            0x17: self.op_cod__div,
+            0x37: self.op_cod__div,
+            0x57: self.op_cod__div,
+            0x77: self.op_cod__div,
+            0xd7: self.op_cod__div,
+
             0x95: self.op_code__increment,
 
             0xc9: self.op_code__and,
             0x49: self.op_code__and,
 
+            0x07: self.op_code__test_bitmap_against_flags,
+            0x27: self.op_code__test_bitmap_against_flags,
+            0x47: self.op_code__test_bitmap_against_flags,
             0x67: self.op_code__test_bitmap_against_flags,
+            0xc7: self.op_code__test_bitmap_against_flags,
 
             0xa0: self.op_code__jump_if_zero,
             0xc1: self.op_code__jump_if_equal,
@@ -214,28 +242,37 @@ class InstructionInterpreter:
 
             0x0d: self.op_code__store,
             0x2d: self.op_code__store,
+            0x4d: self.op_code__store,
+            0x6d: self.op_code__store,
+            0xcd: self.op_code__store,
 
-            0xe3: self.op_code__put_prop,
             0x26: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x66: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
+
             0x0a: self.op_code__test_attribute,
             0x4a: self.op_code__test_attribute,
             0x0b: self.op_code__set_attribute,
             0x4b: self.op_code__set_attribute,
             0x0c: self.op_code__clear_attribute,
             0x4c: self.op_code__clear_attribute,
+
+            0xe3: self.op_code__put_prop,
             0x51: self.op_code__get_property,
+            0x12: self.op_code__get_address_of_property,
+            0x32: self.op_code__get_address_of_property,
+            0x52: self.op_code__get_address_of_property,
             0x72: self.op_code__get_address_of_property,
+            0xd2: self.op_code__get_address_of_property,
             0xa1: self.op_code__get_sibling_of_object,
             0x92: self.op_code__get_child_of_object,
             0xa2: self.op_code__get_child_of_object,
             0x93: self.op_code__get_parent_of_object,
             0xa3: self.op_code__get_parent_of_object,
             0xa4: self.op_code__get_length_of_property,
+
             0x2e: self.op_code__add_object,
             0x6e: self.op_code__add_object,
-            0xaa: self.op_code__print_object,
 
             0xab: self.op_code__return,
             0x8b: self.op_code__return,
@@ -250,6 +287,7 @@ class InstructionInterpreter:
             0xe6: self.op_code__print_num,
             0xad: self.op_code__print_string_at_packed_address,
             0xbb: self.op_code__new_line,
+            0xaa: self.op_code__print_object,
 
             0xe4: self.op_code__read_line_of_user_input,
             0xe7: self.op_code__random,
@@ -258,6 +296,7 @@ class InstructionInterpreter:
     def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
         if instruction.full_opcode not in self.opcode_table.keys():
             debug(f"opcode ({instruction.full_opcode:02x}) not yet implemented", "scroll")
+            print(f"opcode ({instruction.full_opcode:02x}) not yet implemented")
             exit(-1)
         self.opcode_table[instruction.full_opcode](instruction, associated_routine)
 
@@ -308,9 +347,9 @@ class InstructionInterpreter:
 
     def op_code__test_bitmap_against_flags(self, instruction, associated_routine):
         bitmap = instruction.operands[0]
-        flags = instruction.operands[0]
+        flags = instruction.operands[1]
 
-        test_condition = (bitmap & flags) == flags
+        test_condition = ((bitmap & flags) == flags)
 
         self.branch_if_test_condition_passes(instruction, associated_routine, test_condition, False, "__test_bitmap_against_flags")
 
@@ -343,6 +382,24 @@ class InstructionInterpreter:
 
         self.routine_interpreter.store_result(product, result_storage_target, associated_routine)
         debug(f"\t\t__sub instruction puts {multiplier:04x} - {multiplicand:04x} = {product:04x} into {result_storage_target:04x}", "WARNING")
+    
+    def op_cod__div(self, instruction, associated_routine):
+        result_storage_target = self.extractor.read_byte(instruction.storage_target_address)
+        
+        # update address of next instruction based on if there was a store byte or branch byte
+        associated_routine.next_instruction_offset = instruction.storage_target_address + 1
+
+        dividend = instruction.operands[0]
+        divisor = instruction.operands[1]
+
+        if divisor == 0:
+            print("__div performed division by zero, now exiting")
+            os.exit(-1)
+
+        quotient = div_16bit_signed(dividend, divisor)
+
+        self.routine_interpreter.store_result(quotient, result_storage_target, associated_routine)
+        debug(f"\t\t__div instruction puts {dividend:04x} - {divisor:04x} = {quotient:04x} into {result_storage_target:04x}", "WARNING")
 
     def op_code__increment(self, instruction, associated_routine):
         variable_address = instruction.operands[0]

@@ -3,7 +3,7 @@ import queue
 import threading
 from time import sleep
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, Entry
 
 possible_colors = ["white", "blue", "green", "red", "cyan", "yellow", "purple", "pink", "green2", "turquoise1", "MediumPurple1", "DodgerBlue", "DodgerBlue3"]
 special_colors = {
@@ -24,9 +24,9 @@ class GUI:
         gui = DualPanelGUI(root)
 
         # Example usage of add_text function
-        gui.add_text("left", "This is cyan text in the left panel\n", "cyan")
-        gui.add_text("right", "This is white text in the right panel\n", "white")
-        gui.add_text("right", "This is red text in the right panel\n", "red")
+        # gui.add_text("left", "This is cyan text in the left panel\n", "cyan")
+        # gui.add_text("right", "This is white text in the right panel\n", "white")
+        # gui.add_text("right", "This is red text in the right panel\n", "red")
 
         for color in possible_colors:
             # Configure text colors for the right panel
@@ -89,21 +89,59 @@ class DualPanelGUI:
         self.master = master
         master.title("Dual Panel GUI")
 
+        # Create top right search bar
+        self.search_frame = tk.Frame(master)
+        self.search_frame.grid(row=0, column=1, sticky="ne", padx=10, pady=5)
+        
+        self.search_entry = Entry(self.search_frame, width=20)
+        self.search_entry.pack(side=tk.LEFT)
+        
+        self.search_button = tk.Button(self.search_frame, text="Search", command=self.search)
+        self.search_button.pack(side=tk.LEFT)
+
         # Create left panel (CYAN text)
         self.left_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=20)
-        self.left_panel.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        # self.left_panel.config(bg="black", fg="cyan")
+        self.left_panel.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         self.left_panel.config(bg="black")
 
         # Create right panel (WHITE and RED text)
         self.right_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=20)
-        self.right_panel.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.right_panel.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         self.right_panel.config(bg="black")
 
         # Configure grid weights
         master.grid_columnconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
-        master.grid_rowconfigure(0, weight=1)
+        master.grid_rowconfigure(1, weight=1)
+
+    def search(self):
+        search_term = self.search_entry.get()
+        start_index = "1.0"
+        
+        # Find the position of the search term
+        pos = self.right_panel.search(search_term, start_index, stopindex=tk.END, nocase=1)
+        
+        if pos:
+            # Calculate the line number of the found text
+            line_number = int(pos.split('.')[0])
+            
+            # Calculate the total number of lines in the text widget
+            total_lines = int(self.right_panel.index(tk.END).split('.')[0])
+            
+            # Calculate the fraction to scroll to
+            fraction = (line_number - 1) / total_lines
+            
+            # Scroll to the calculated fraction
+            self.right_panel.yview_moveto(fraction)
+            
+            # Highlight the found text
+            end_pos = f"{pos}+{len(search_term)}c"
+            self.right_panel.tag_add("search", pos, end_pos)
+            self.right_panel.tag_config("search", background="grey")
+            
+            messagebox.showinfo("Search", f"Found '{search_term}' at position {pos}")
+        else:
+            messagebox.showinfo("Search", f"'{search_term}' not found")
 
     def add_text(self, panel, text, color, should_scroll=False):
         if panel == "left":
