@@ -1050,6 +1050,7 @@ class InstructionInterpreter:
         if not self.should_get_user_input:
             user_input = "w"[0:max_number_of_input_letters].lower()
         else:
+            debug(f"waiting for user input", "scroll")
             user_input = input()[0:max_number_of_input_letters].lower()
             debug(f"\n","CYAN_no_z_string")
                 

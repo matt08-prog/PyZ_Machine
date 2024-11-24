@@ -48,7 +48,8 @@ class GUI:
                     gui.add_text(
                         data_object["text_location"], 
                         data_object["text"],
-                        data_object["text_color"]
+                        data_object["text_color"],
+                        data_object["should_scroll"]
                         )
             except queue.Empty:
                 pass
@@ -94,7 +95,7 @@ class DualPanelGUI:
         master.grid_columnconfigure(1, weight=1)
         master.grid_rowconfigure(0, weight=1)
 
-    def add_text(self, panel, text, color):
+    def add_text(self, panel, text, color, should_scroll=False):
         if panel == "left":
             self.left_panel.config(state=tk.NORMAL)
             self.left_panel.insert(tk.END, text, color)
@@ -103,4 +104,9 @@ class DualPanelGUI:
             self.right_panel.config(state=tk.NORMAL)
             self.right_panel.insert(tk.END, text, color)
             self.right_panel.config(state=tk.DISABLED)
+        if should_scroll:
+            self.right_panel.update_idletasks()  # Update the widget
             self.right_panel.yview_moveto(1.0)  # Scroll to the bottom
+
+            self.left_panel.update_idletasks()  # Update the widget
+            self.left_panel.yview_moveto(1.0)  # Scroll to the bottom

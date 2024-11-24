@@ -60,15 +60,21 @@ class Debug:
             "time-stamp": "white",
             "time-stamp-only": "white",
             "BOLD": "white", # specail
-            "UNDERLINE": "white" # special
+            "UNDERLINE": "white", # special
+            "scroll": "red" # special
         }
 
         text_location = "left" # left or right
         text = debug_string # text to display
         text_color = "white"
+        should_scroll = False
 
         if severity_string == "time-stamp-only" and not instructions_only:
             return
+        
+        if severity_string == "scroll":
+            should_scroll = True
+            text_location = "right"
 
         if severity_string in translated_debug_colors.keys():
             text_color = translated_debug_colors[severity_string]
@@ -104,7 +110,8 @@ class Debug:
         text_data_object = {
             "text_location": text_location,
             "text": text + end_string,
-            "text_color": text_color
+            "text_color": text_color,
+            "should_scroll": should_scroll
         }
 
         self.gui_queue.put(text_data_object)

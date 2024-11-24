@@ -13,7 +13,6 @@ from dictionary import Dictionary
 from GUI import GUI
 from debuger import Debug
 import queue 
-from object import Object
 
 import argparse
 
