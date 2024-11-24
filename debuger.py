@@ -47,13 +47,13 @@ class Debug:
     def debug(self, debug_string, severity_string="unclassified_severity", end_string="\n"):
         if severity_string == "unclassified_severity":
             return
-        print(f"debug request, debug({debug_string}, {severity_string})")
+        # print(f"debug request, debug({debug_string}, {severity_string})")
         translated_debug_colors = {
-            "HEADER": "purple",
-            "OKBLUE": "blue",
+            "HEADER": "MediumPurple1",
+            "OKBLUE": "DodgerBlue3", # or turquoise1
             "OKCYAN": "cyan",
             "CYAN": "cyan", 
-            "GREEN": "green",
+            "GREEN": "green2",
             "WARNING": "yellow",
             "FAIL": "red",
             "ENDC": "white",

@@ -5,8 +5,7 @@ from time import sleep
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
-possible_colors = ["white", "blue", "green", "red", "cyan", "yellow", "purple", "pink"]
-
+possible_colors = ["white", "blue", "green", "red", "cyan", "yellow", "purple", "pink", "green2", "turquoise1", "MediumPurple1", "DodgerBlue", "DodgerBlue3"]
 class GUI:
     def __init__(self):
         pass
