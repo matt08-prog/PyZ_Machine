@@ -41,8 +41,8 @@ def binary_word_16_bits_to_signed_int(binary_value):
     return num
 
 def binary_14_bits_to_signed_int(binary_value): # should be moved to global variable file with helper functions
-    debug(f"\t\t\tbinary_to_signed_int")
-    debug(f"\t\t\t binary value: {binary_value}")
+    # debug(f"\t\t\tbinary_to_signed_int")
+    # debug(f"\t\t\t binary value: {binary_value}")
     binary_str = bin(binary_value)
     if binary_str[0] == "-":
         return binary_value
@@ -52,7 +52,7 @@ def binary_14_bits_to_signed_int(binary_value): # should be moved to global vari
     # Remove any spaces from the binary string
     binary_str = binary_str.replace(" ", "")
     
-    debug(f"\t\t\t binary string: {binary_str}")
+    # debug(f"\t\t\t binary string: {binary_str}")
     # Get the length of the binary string
     num_bits = 14
     
@@ -63,13 +63,13 @@ def binary_14_bits_to_signed_int(binary_value): # should be moved to global vari
     if num & (1 << (num_bits - 1)):
         # The only time we should ever get here is if this is the first time the interpreter is looking at this value
         num -= 1 << num_bits
-    debug(f"\t\t\tfinal value: {num}")
+    # debug(f"\t\t\tfinal value: {num}")
     return num
 
 
 def byte_to_signed_int(binary_value): # should be moved to global variable file with helper functions
-    debug(f"\t\t\tbinary_to_signed_int")
-    debug(f"\t\t\t binary value: {binary_value}")
+    # debug(f"\t\t\tbinary_to_signed_int")
+    # debug(f"\t\t\t binary value: {binary_value}")
     binary_str = bin(binary_value)
     if binary_str[0] == "-":
         return binary_value
@@ -79,7 +79,7 @@ def byte_to_signed_int(binary_value): # should be moved to global variable file 
     # Remove any spaces from the binary string
     binary_str = binary_str.replace(" ", "")
     
-    debug(f"\t\t\t binary string: {binary_str}")
+    # debug(f"\t\t\t binary string: {binary_str}")
     # Get the length of the binary string
     num_bits = 14
     
@@ -90,7 +90,7 @@ def byte_to_signed_int(binary_value): # should be moved to global variable file 
     if num & (1 << (num_bits - 1)):
         # The only time we should ever get here is if this is the first time the interpreter is looking at this value
         num -= 1 << num_bits
-    debug(f"\t\t\tfinal value: {num}")
+    # debug(f"\t\t\tfinal value: {num}")
     return num
 
 def add_16bit_signed(a, b):

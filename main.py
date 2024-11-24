@@ -41,7 +41,6 @@ def main_loop(gui_text_queue=None):
         debugger = Debug(gui_text_queue)
     else:
         print("gui_text_queue was Null, not passed to debugger")
-    gui_text_queue.put("test_string")
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
     parser.add_argument("-a", "--abbreviations", action="store_true", help="Output abbreviations table")

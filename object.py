@@ -9,10 +9,18 @@ debugger = Debug()
 def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
     debugger.debug(debug_string, severity_string, end_string)
 
-
 class Object:
     def __init__(self, object_number, attribute_table=[], p=0, s=0, c=0, props=[], object_description=""):
         self.object_number = object_number
+        # debug(f"\t\t__HEADER\n", "HEADER")
+        # debug(f"\t\t__OKBLUE\n", "OKBLUE")
+        # debug(f"\t\t__CYAN\n", "CYAN")
+        # debug(f"\t\t__WARNING\n", "WARNING")
+        # debug(f"\t\t__FAIL\n", "FAIL")
+        # debug(f"\t\t__ENDC\n", "ENDC")
+        # debug(f"\t\t__BOLD\n", "BOLD")
+        # debug(f"\t\t__UNDERLINE\n", "UNDERLINE")
+        # debug(f"\t\t__debug\n", "debug")
         # Attributes 0 to 31 are flags (at any given time, they are either on (1) or off (0))
         # stored topmost bit first: e.g., attribute 0 is stored in bit 7 of the first byte, attribute 31 is stored in bit 0 of the fourth.
         self.attribute_flags = attribute_table

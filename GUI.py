@@ -5,6 +5,8 @@ from time import sleep
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
+possible_colors = ["white", "blue", "green", "red", "cyan", "yellow", "purple", "pink"]
+
 class GUI:
     def __init__(self):
         pass
@@ -21,9 +23,12 @@ class GUI:
         gui.add_text("right", "This is white text in the right panel\n", "white")
         gui.add_text("right", "This is red text in the right panel\n", "red")
 
-        # Configure text colors for the right panel
-        gui.right_panel.tag_config("white", foreground="white")
-        gui.right_panel.tag_config("red", foreground="red")
+        for color in possible_colors:
+            # Configure text colors for the right panel
+            gui.left_panel.tag_config(color, foreground=color)
+            # Configure text colors for the right panel
+            gui.right_panel.tag_config(color, foreground=color)
+
 
         self.run_gui(root, gui)
         print("after thread start")
@@ -32,8 +37,20 @@ class GUI:
         def update():
             try:
                 # consume data from main thread
-                data = self.queue.get(False)
-                gui.add_text("left", data, "green")
+                while not self.queue.empty():
+                    data_object = self.queue.get(False)
+                    # print(f"recieved text_data_object: {data_object}")
+
+                    if data_object["text_color"] not in possible_colors:
+                        print(f"{data_object["text_color"]} is not one of the current colors the GUI is ready to accept")
+                        os._exit(1)
+
+
+                    gui.add_text(
+                        data_object["text_location"], 
+                        data_object["text"],
+                        data_object["text_color"]
+                        )
             except queue.Empty:
                 pass
             
@@ -65,7 +82,8 @@ class DualPanelGUI:
         # Create left panel (CYAN text)
         self.left_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=20)
         self.left_panel.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.left_panel.config(bg="black", fg="cyan")
+        # self.left_panel.config(bg="black", fg="cyan")
+        self.left_panel.config(bg="black")
 
         # Create right panel (WHITE and RED text)
         self.right_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=20)
@@ -80,7 +98,7 @@ class DualPanelGUI:
     def add_text(self, panel, text, color):
         if panel == "left":
             self.left_panel.config(state=tk.NORMAL)
-            self.left_panel.insert(tk.END, text)
+            self.left_panel.insert(tk.END, text, color)
             self.left_panel.config(state=tk.DISABLED)
         elif panel == "right":
             self.right_panel.config(state=tk.NORMAL)
