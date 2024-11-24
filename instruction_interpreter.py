@@ -251,7 +251,7 @@ class InstructionInterpreter:
 
     def interpret_instruction(self, instruction: Instruction, associated_routine: Routine):
         if instruction.full_opcode not in self.opcode_table.keys():
-            debug(f"opcode ({instruction.full_opcode:02x}) not yet implemented", "FAIL")
+            debug(f"opcode ({instruction.full_opcode:02x}) not yet implemented", "scroll")
             exit(-1)
         self.opcode_table[instruction.full_opcode](instruction, associated_routine)
 

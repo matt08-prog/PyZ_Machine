@@ -6,6 +6,11 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox
 
 possible_colors = ["white", "blue", "green", "red", "cyan", "yellow", "purple", "pink", "green2", "turquoise1", "MediumPurple1", "DodgerBlue", "DodgerBlue3"]
+special_colors = {
+    "scroll": {"font": ("Arial", 32), "foreground": "red"},
+    "bold": {"font": ("Arial", 12), "foreground": "white"},
+    "underline": {"font": ("Arial", 10), "foreground": "white", "underline": True}
+}
 class GUI:
     def __init__(self):
         pass
@@ -28,6 +33,11 @@ class GUI:
             gui.left_panel.tag_config(color, foreground=color)
             # Configure text colors for the right panel
             gui.right_panel.tag_config(color, foreground=color)
+        for color_name, props in special_colors.items():
+            # gui.right_panel.tag_config("scroll", foreground="red", font=("Arial", 32))
+            should_underline = "underline" in props.keys()
+            gui.right_panel.tag_config(color_name, foreground=props["foreground"], font=props["font"], underline=should_underline)
+            gui.left_panel.tag_config(color_name, foreground=props["foreground"], font=props["font"], underline=should_underline)
 
 
         self.run_gui(root, gui)
@@ -41,7 +51,7 @@ class GUI:
                     data_object = self.queue.get(False)
                     # print(f"recieved text_data_object: {data_object}")
 
-                    if data_object["text_color"] not in possible_colors:
+                    if data_object["text_color"] not in possible_colors and data_object["text_color"] not in special_colors.keys():
                         print(f"{data_object["text_color"]} is not one of the current colors the GUI is ready to accept")
                         os._exit(1)
 

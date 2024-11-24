@@ -75,7 +75,8 @@ class RoutineInterpreter:
             next_instruction = routine.read_next_instruction()
 
 
-            debug(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address", "time-stamp")
+            # debug(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address", "time-stamp")
+            debug(f"{routine.next_instruction_offset:02x} time-{self.time_stamp} routine's next instruction address", "underline")
             debug(f"{routine.next_instruction_offset:02x}", "time-stamp-only")
 
 

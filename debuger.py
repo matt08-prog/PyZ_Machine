@@ -59,14 +59,15 @@ class Debug:
             "ENDC": "white",
             "time-stamp": "white",
             "time-stamp-only": "white",
-            "BOLD": "white", # specail
-            "UNDERLINE": "white", # special
-            "scroll": "red" # special
+            "debug": "white"
+            # "BOLD": "white", # specail
+            # "UNDERLINE": "white", # special
+            # "scroll": "red" # special
         }
 
         text_location = "left" # left or right
         text = debug_string # text to display
-        text_color = "white"
+        text_color = severity_string
         should_scroll = False
 
         if severity_string == "time-stamp-only" and not instructions_only:
@@ -75,8 +76,11 @@ class Debug:
         if severity_string == "scroll":
             should_scroll = True
             text_location = "right"
-
-        if severity_string in translated_debug_colors.keys():
+        elif severity_string == "BOLD":
+            text_location = "left"
+        elif severity_string == "underline":
+            text_location = "right"
+        elif severity_string in translated_debug_colors.keys():
             text_color = translated_debug_colors[severity_string]
 
         if (severity_string.lower() == "cyan"):
@@ -88,7 +92,7 @@ class Debug:
         elif severity_string.lower() == "bold":
             start_index = debug_string.index(":") + 1
             text = debug_string[start_index:]
-            text_color = "white"
+            text_color = "bold"
             text_location = "left"
             end_string = ""
         elif severity_string == "CYAN_no_z_string":
