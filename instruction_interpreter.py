@@ -796,7 +796,6 @@ class InstructionInterpreter:
         property_number = instruction.operands[1]
         property_address = self.object_loader.get_object_property_address(object_number, property_number)
 
-
         storage_target = instruction.storage_target
 
         debug(f"\t\t__get_address_of_property found object #{object_number} has property #{property_number} (whose address is 0x{property_address:04x} ({property_address}))", "WARNING")
@@ -846,7 +845,20 @@ class InstructionInterpreter:
         storage_target = instruction.storage_target
         self.routine_interpreter.store_result(parent_object_number, storage_target, associated_routine)
         associated_routine.next_instruction_offset = instruction.branch_target_address
-        debug(f"\t\t__get_parent_of_object found object \"{self.object_loader.get_object_description(object_number)[0]}\" (#{object_number}) has parent \"{self.object_loader.get_object_description(parent_object_number)[0]}\" (#{parent_object_number})", "WARNING")
+
+        object_description = self.object_loader.get_object_description(object_number)
+        if len(object_description) > 0:
+            object_description = object_description[0]
+        else:
+            object_description = ""
+
+        object_parent_description = self.object_loader.get_object_description(parent_object_number)
+        if len(object_parent_description) > 0:
+            object_parent_description = object_parent_description[0]
+        else:
+            object_parent_description = ""
+
+        debug(f"\t\t__get_parent_of_object found object \"{object_description}\" (#{object_number}) has parent \"{object_parent_description}\" (#{parent_object_number})", "WARNING")
         pass
 
     def op_code__clear_attribute(self, instruction, associated_routine):
@@ -1108,7 +1120,7 @@ class InstructionInterpreter:
         parse_memory_buffer_address = instruction.operands[1]
 
         max_number_of_input_letters = self.extractor.read_byte(text_memory_buffer_address)
-        debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
+        # debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
         # get user input
         if not self.should_get_user_input:
@@ -1125,8 +1137,8 @@ class InstructionInterpreter:
         z_word_and_text_buffer_index_list_object = self.extractor.z_characters_to_z_words_and_text_buffer_index_list(z_characters, cleaned_user_input)
         z_words = z_word_and_text_buffer_index_list_object[0]
         text_buffer_index_list = z_word_and_text_buffer_index_list_object[1]
-        debug(f"text_buffer_index_list {text_buffer_index_list}")
-        debug(f"z_chars {z_characters}","debug")
+        # debug(f"text_buffer_index_list {text_buffer_index_list}")
+        # debug(f"z_chars {z_characters}","debug")
         # print(f"z_words {z_words}")
         def int_to_binary(n, width=15):
             return f'{n:0{width}b}'
@@ -1141,20 +1153,20 @@ class InstructionInterpreter:
 
 
         # debug(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ", "WARNING")
-        print(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ")
+        # print(f"\t\t__read_line_of_user_input recieved input \"{cleaned_user_input}\" ")
         # debug(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})", "debug")
-        print(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})")
+        # print(f"length of user input ({len(cleaned_user_input)}) == lenth of z_words({len(z_characters)})")
 
         max_number_of_textual_words_to_be_parsed = self.extractor.read_byte(parse_memory_buffer_address)
         split_input = self.extractor.split_input_string(cleaned_user_input, text_buffer_index_list)
         # debug(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ", "WARNING")
-        print(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ")
+        # print(f"\t\t__read_line_of_user_input split input as \"{split_input}\" ")
 
         self.extractor.write_byte(parse_memory_buffer_address + 1, len(split_input))
         parse_buffer_index = 2
         for word_entry in split_input:
             dictionary_address = self.routine_interpreter.dictionary.get_dict_address(word_entry[0]) # not stored as packed because not always even
-            print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
+            # print(f"[{word_entry[0]}]'s dict address {(dictionary_address):05x}")
             self.extractor.write_word(parse_memory_buffer_address + parse_buffer_index, dictionary_address) # byte address of dictionary entry
             self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 2, len(word_entry[0])) # number of letters in the word
             self.extractor.write_byte(parse_memory_buffer_address + parse_buffer_index + 3, word_entry[1]) # position of the first char in text buffer

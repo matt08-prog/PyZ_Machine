@@ -276,15 +276,12 @@ class HexExtractor:
 
 
     def split_input_string(self, input_string, text_buffer_index_list):
-        # starting_string = input_string.replace("\xa0", " ")
         starting_string = [[input_string.replace("\'", r"'"), 0]]
         debug(f"starting_string: {starting_string}","debug")
-        # split_string = starting_string.split(" ") # array
         split_string = self.split_and_store_original_index(starting_string, " ") # array
         word_seperators = ["\"", ",", "."]
 
-        # split_string = [element for _, element in enumerate(split_string) if element != ""]
-        print(f"First split string = {split_string}")
+        # print(f"First split string = {split_string}")
         no_more_to_split = False
         index = 0
 

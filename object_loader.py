@@ -47,7 +47,7 @@ class ObjectLoader:
 
                 object_child = self.find_object(object_to_append)
                 if object_child.object_number > 0:
-                    print(f"added {object_to_append.object_number} as {object_child}'s parent")
+                    # print(f"added {object_to_append.object_number} as {object_child}'s parent")
                     object_child.parent = object_to_append.object_number
 
             object_parent_index = object_to_append.parent
@@ -93,7 +93,9 @@ class ObjectLoader:
 
     def load_property_header(self, starting_address):
         num_descirption_words = self.extractor.read_byte(starting_address)
-        description = self.extractor.read_string(starting_address + 1)
+        description = ""
+        if num_descirption_words > 0:
+            description = self.extractor.read_string(starting_address + 1)
         final_address = starting_address + (num_descirption_words * 2) + 1
         # print(description)
         return {"final_address": final_address, "object_description": description}
@@ -127,7 +129,7 @@ class ObjectLoader:
 
         while start_of_next_property != start_of_objects_table:
         # while object_index < 5:
-            default_properties.append([self.extractor.read_byte(start_of_next_property), self.extractor.read_byte(start_of_next_property + 1)])
+            default_properties.append([[self.extractor.read_byte(start_of_next_property), self.extractor.read_byte(start_of_next_property + 1)], start_of_next_property])
             start_of_next_property += 2
             property_index += 1
         
@@ -192,19 +194,17 @@ class ObjectLoader:
 
     def get_object_property_data(self, object_number, property_number):
         object = self.find_object(object_number)
-        property = object.get_property_data(property_number)
-        if property == -1:
-            property = self.default_properties[property_number]
-            # may need to turn the default properties into an array
-        return property
+        property_data = object.get_property_data(property_number)
+        if property_data == -1:
+            property_data = self.default_properties[property_number][0]
+        return property_data
     
     def get_object_property_address(self, object_number, property_number):
         object = self.find_object(object_number)
-        property = object.get_property_address(property_number)
-        if property == -1:
-            property = self.default_properties[property_number]
-            # may need to turn the default properties into an array
-        return property
+        property_address = object.get_property_address(property_number)
+        if property_address == -1:
+            property_address = self.default_properties[property_number][1]
+        return property_address
 
     def insert_object(self, index_of_object_to_be_moved, index_of_object_destination):
         # object_to_be_moved = None

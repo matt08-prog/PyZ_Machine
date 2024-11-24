@@ -41,7 +41,6 @@ class GUI:
 
 
         self.run_gui(root, gui)
-        print("after thread start")
 
     def run_gui(self, root, gui):
         def update():
