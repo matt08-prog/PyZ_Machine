@@ -2,11 +2,15 @@
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
-from debuger import debug
+from debuger import Debug
 from unicodedata import normalize
 import random
 import time
 
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
 
  # should be moved to global variable file with helper functions
  #      should also be merged with two functions below it into one function that lets you specify the number of bits
@@ -144,7 +148,9 @@ class bcolors:
 
 
 class InstructionInterpreter:
+
     def __init__(self, extractor, header, routine_interpreter, object_loader, abreviator):
+        self.debugger = Debug()
         self.extractor = extractor
         self.header = header
         self.routine_interpreter = routine_interpreter

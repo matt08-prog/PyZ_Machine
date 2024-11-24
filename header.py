@@ -1,6 +1,6 @@
 # header.py
 from hex_extractor import HexExtractor
-from debuger import debug
+from debuger import Debug
 
 class Header:
     def __init__(self, hex_data, extractor):

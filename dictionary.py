@@ -2,7 +2,12 @@
 from hex_extractor import HexExtractor
 from instruction import Instruction
 # from interpreter import Interpreter
-from debuger import debug
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(self, *args, **kwargs):
+    debugger.debug(*args, **kwargs)
 
 
 class Dictionary:

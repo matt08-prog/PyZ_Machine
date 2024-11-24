@@ -11,10 +11,21 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-from debuger import debug
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
+
 
 class HexExtractor:
+
+    def debug(self, *args, **kwargs):
+        self.debugger.debug(*args, **kwargs)
+
     def __init__(self, file_path, hex_data, abreviator):
+        self.debugger = Debug()
         self.file_path = file_path
         self.hex_data = hex_data
         self.abreviator = abreviator

@@ -2,8 +2,13 @@
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from object import Object
-from debuger import debug
-# from interpreter import Interpreter
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
+
 
 class ObjectLoader:
     def __init__(self, extractor, header):

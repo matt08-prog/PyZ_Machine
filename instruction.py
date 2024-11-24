@@ -1,6 +1,11 @@
 # instruction.py
 from hex_extractor import HexExtractor
-from debuger import debug
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
 
 class bcolors:
     HEADER = '\033[95m'

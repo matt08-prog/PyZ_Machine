@@ -3,7 +3,13 @@ from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
 from instruction_interpreter import InstructionInterpreter
-from debuger import debug
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
+
 
 def binary_to_signed_int(binary_str): # should be moved to global variable file with helper functions
     # Remove any spaces from the binary string

@@ -2,11 +2,17 @@
 from hex_extractor import HexExtractor
 from instruction import Instruction
 # from interpreter import Interpreter
+from debuger import Debug
+
+debugger = Debug()
+
+def debug(debug_string, severity_string="unclassified_severity", end_string="\n"):
+    debugger.debug(debug_string, severity_string, end_string)
+
 
 class Object:
     def __init__(self, object_number, attribute_table=[], p=0, s=0, c=0, props=[], object_description=""):
         self.object_number = object_number
-
         # Attributes 0 to 31 are flags (at any given time, they are either on (1) or off (0))
         # stored topmost bit first: e.g., attribute 0 is stored in bit 7 of the first byte, attribute 31 is stored in bit 0 of the fourth.
         self.attribute_flags = attribute_table

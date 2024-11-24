@@ -11,7 +11,9 @@ from routine_interpreter import RoutineInterpreter
 from object_loader import ObjectLoader
 from dictionary import Dictionary
 from GUI import GUI
+from debuger import Debug
 import queue 
+from object import Object
 
 import argparse
 
@@ -20,20 +22,25 @@ should_ask_before_closing_window = False
 def main():
     q = queue.Queue()
     gui = GUI()
-    # main_loop_thread = threading.Thread(target=main_loop(q))
     main_loop_thread = threading.Thread(target=main_loop, args=(q, ))
-    # gui_loop_thread = threading.Thread(target=gui.init_GUI(q))
+    # main_loop_thread = threading.Thread(target=test_main_loop, args=(q, ))
     gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(q, should_ask_before_closing_window, ))
     main_loop_thread.start()
     gui_loop_thread.start()
 
-    
-
-    print("test")
-
+# def test_main_loop(gui_text_queue=None):
+#     if gui_text_queue != None:
+#         debugger = Debug(gui_text_queue)
+#         obj = Object(77)
+#     else:
+#         print("gui_text_queue was Null, not passed to debugger")
 
 def main_loop(gui_text_queue=None):
     max_time_step = -1
+    if gui_text_queue != None:
+        debugger = Debug(gui_text_queue)
+    else:
+        print("gui_text_queue was Null, not passed to debugger")
     gui_text_queue.put("test_string")
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
