@@ -45,7 +45,6 @@ class GUI:
                         print(f"{data_object["text_color"]} is not one of the current colors the GUI is ready to accept")
                         os._exit(1)
 
-
                     gui.add_text(
                         data_object["text_location"], 
                         data_object["text"],
@@ -104,3 +103,4 @@ class DualPanelGUI:
             self.right_panel.config(state=tk.NORMAL)
             self.right_panel.insert(tk.END, text, color)
             self.right_panel.config(state=tk.DISABLED)
+            self.right_panel.yview_moveto(1.0)  # Scroll to the bottom
