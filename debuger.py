@@ -31,6 +31,7 @@ used_debug_colors = [
 instructions_only = 0
 printed_character_only = 0
 print_instructions = 1
+should_export_instructions = 1
 
 class Debug:
     _instance = None
@@ -43,6 +44,10 @@ class Debug:
     def __init__(self, gui_queue=None):
         if gui_queue != None:
             self.gui_queue = gui_queue
+        self.file_path = "../exported_instructions.txt"
+        # Open the file in write mode, which will create a new file or replace an existing one
+        with open(self.file_path, 'w') as file:
+            pass  # Just create or clear the file
 
     def debug(self, debug_string, severity_string="unclassified_severity", end_string="\n"):
         if severity_string == "unclassified_severity":
@@ -70,8 +75,14 @@ class Debug:
         text_color = severity_string
         should_scroll = False
 
-        if severity_string == "time-stamp-only" and not instructions_only:
-            return
+        if severity_string == "time-stamp-only":
+            if not should_export_instructions:
+                return
+            else:
+                with open(self.file_path, 'a') as file:
+                    # Write the given string to the file
+                    file.write(debug_string + '\n')  # Add a newline after each string
+                    return
         
         if severity_string == "scroll":
             should_scroll = True

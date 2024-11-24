@@ -170,7 +170,11 @@ class InstructionInterpreter:
             0x54: self.op_code__add, 
             0x74: self.op_code__add,
 
+            0x15: self.op_cod__sub,
+            0x35: self.op_cod__sub,
             0x55: self.op_cod__sub,
+            0x75: self.op_cod__sub,
+            0xd5: self.op_cod__sub,
 
             0x56: self.op_cod__mul,
             0x36: self.op_cod__mul,
