@@ -14,6 +14,7 @@ class GUI:
         self.queue = queue
 
         root = tk.Tk()
+        root.state("zoomed")
         root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(root, should_ask_before_closing_window))
         gui = DualPanelGUI(root)
 
