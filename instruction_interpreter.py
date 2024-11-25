@@ -246,6 +246,10 @@ class InstructionInterpreter:
             0x6d: self.op_code__store,
             0xcd: self.op_code__store,
 
+            0x8e: self.op_code__load,
+            0x9e: self.op_code__load,
+            0xae: self.op_code__load,
+
             0x26: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x46: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
             0x66: self.op_code__jump_if_object_a_is_direct_child_of_object_b,
@@ -635,9 +639,12 @@ class InstructionInterpreter:
         self.routine_interpreter.store_result(value_to_store, variable_store_destination, associated_routine)
         associated_routine.next_instruction_offset = instruction.storage_target_address
         debug(f"\t\t__store stored {value_to_store:02x} into {variable_store_destination:05x}", "WARNING")
-        if variable_store_destination - 0x10 == 0 or variable_store_destination - 0x10 == 82:
-            debug(f"\t\t__store stored {value_to_store:02x} into {int(variable_store_destination - 0x10)}", "WARNING")
-            debug(f"\t\t__store stored {value_to_store:02x} into {int(variable_store_destination - 0x10)}", "WARNING")
+    
+    def op_code__load(self, instruction, associated_routine):
+        value_to_store = instruction.operands[0]
+
+        self.routine_interpreter.store_result(value_to_store, instruction.storage_target, associated_routine)
+        associated_routine.next_instruction_offset = instruction.branch_target_address
 
     def op_code__put_prop(self, instruction, associated_routine):
         object_number = instruction.operands[0]
