@@ -15,13 +15,13 @@ class GUI:
     def __init__(self):
         pass
 
-    def init_GUI(self, queue, should_ask_before_closing_window):
-        self.queue = queue
+    def init_GUI(self, instruction_output_queue, user_input_queue, should_ask_before_closing_window):
+        self.queue = instruction_output_queue
 
         root = tk.Tk()
         root.state("zoomed")
         root.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(root, should_ask_before_closing_window))
-        gui = DualPanelGUI(root)
+        gui = DualPanelGUI(root, user_input_queue)
 
         # Example usage of add_text function
         # gui.add_text("left", "This is cyan text in the left panel\n", "cyan")
@@ -84,17 +84,25 @@ class GUI:
             os._exit(1)
 
 class DualPanelGUI:
-    def __init__(self, master):
+    def __init__(self, master, user_input_queue):
         self.master = master
+        self.user_input_queue = user_input_queue
+
+        initial_user_input = self.get_user_input()
+        initial_user_input = "".join(str(x) for x in initial_user_input)
+        print(f"gui's initial user_input: {initial_user_input}")
+
         master.title("Dual Panel GUI")
 
-        # Create top right search bar
+        # Create top right search bar GUI frame
         self.search_frame = tk.Frame(master)
         self.search_frame.grid(row=0, column=1, sticky="ne", padx=10, pady=5)
         
+        # Create Search Bar
         self.search_entry = Entry(self.search_frame, width=20)
         self.search_entry.pack(side=tk.LEFT)
         
+        # Create Search Button
         self.search_button = tk.Button(self.search_frame, text="Search", command=self.search)
         self.search_button.pack(side=tk.LEFT)
 
@@ -105,13 +113,40 @@ class DualPanelGUI:
 
         # Create right panel (WHITE and RED text)
         self.right_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=20)
-        self.right_panel.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        self.right_panel.grid(row=1, column=1, rowspan=2, padx=10, pady=10, sticky="nsew")
         self.right_panel.config(bg="black")
+
+        # Create input panel
+        self.user_input_panel = scrolledtext.ScrolledText(master, wrap=tk.WORD, width=40, height=10)
+        # self.input_panel = Entry(master, width=40)
+        self.user_input_panel.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        # self.input_panel.config(bg="black")
+
+        # Create Enter user input Button
+        self.user_input_search_button = tk.Button(master, text="Submit user Input", command=self.send_user_input)
+        self.user_input_search_button.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
+        # self.search_button.pack(side=tk.LEFT)
+
+        self.add_text("user_input", initial_user_input, "black")
 
         # Configure grid weights
         master.grid_columnconfigure(0, weight=1)
         master.grid_columnconfigure(1, weight=1)
         master.grid_rowconfigure(1, weight=1)
+
+    def get_user_input(self):
+        if not self.user_input_queue.empty():
+            user_input = self.user_input_queue.get()
+            return user_input
+        else:
+            return ""
+
+    def send_user_input(self):
+        user_input = self.user_input_panel.get("1.0", tk.END)
+        self.user_input_queue.put("BEGIN_READING_USER_INPUT") # Front of queue
+        self.user_input_queue.put(user_input) # put, places them begind the front
+        self.user_input_queue.put("END_READING_USER_INPUT") # Front of queue
+        print(f"{user_input} sent from GUI")
 
     def search(self):
         search_term = self.search_entry.get()
@@ -151,7 +186,11 @@ class DualPanelGUI:
             self.right_panel.config(state=tk.NORMAL)
             self.right_panel.insert(tk.END, text, color)
             self.right_panel.config(state=tk.DISABLED)
-        if should_scroll:
+        elif panel == "user_input":
+            self.user_input_panel.config(state=tk.NORMAL)
+            self.user_input_panel.insert(tk.END, text, color)
+            self.user_input_panel.config(state=tk.DISABLED)
+        elif should_scroll:
             self.right_panel.update_idletasks()  # Update the widget
             self.right_panel.yview_moveto(1.0)  # Scroll to the bottom
 

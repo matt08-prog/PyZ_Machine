@@ -1,4 +1,5 @@
 # routine_interpreter.py
+import threading
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
@@ -39,11 +40,12 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class RoutineInterpreter:
-    def __init__(self, extractor, header, max_time_step, object_loader, abreviator, dictionary):
+    def __init__(self, extractor, header, max_time_step, object_loader, abreviator, dictionary, user_input):
         self.extractor = extractor
         self.header = header
         self.max_time_step = max_time_step
-        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self, object_loader, abreviator)
+        self.user_input = user_input
+        self.instruction_interpreter = InstructionInterpreter(self.extractor, self.header, self, object_loader, abreviator, user_input)
         self.dictionary = dictionary
 
         self.time_stamp = 0
@@ -62,7 +64,13 @@ class RoutineInterpreter:
         starting_routine = Routine(self.extractor, starting_routine_address_from_header, [], self)
         debug(f"first routine's address: {starting_routine_address_from_header}")
         debug(f"routine's local vars: {starting_routine.local_vars}")
+        for thread in threading.enumerate():
+            if thread.daemon or thread is threading.current_thread():
+                print(thread)
+                continue
+            # thread.join()
         self.run_routine(starting_routine) # This starting routine should never return a value
+        print("should never reach this point")
     
     def run_routine(self, routine):
         # print(f"number of local vars: {routine.num_local_vars}")

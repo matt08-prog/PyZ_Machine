@@ -1,5 +1,6 @@
 # instruction_interpreter.py
 import os
+import threading
 from hex_extractor import HexExtractor
 from instruction import Instruction
 from routine import Routine
@@ -164,13 +165,14 @@ class bcolors:
 
 class InstructionInterpreter:
 
-    def __init__(self, extractor, header, routine_interpreter, object_loader, abreviator):
+    def __init__(self, extractor, header, routine_interpreter, object_loader, abreviator, user_input):
         self.debugger = Debug()
         self.extractor = extractor
         self.header = header
         self.routine_interpreter = routine_interpreter
         self.object_loader = object_loader
         self.abreviator = abreviator
+        self.user_input = user_input
 
         self.time_stamp = 0
 
@@ -1130,12 +1132,17 @@ class InstructionInterpreter:
         # debug(f"\t\tmaximum number of input letters: {max_number_of_input_letters}","debug")
 
         # get user input
-        if not self.should_get_user_input:
-            user_input = "w"[0:max_number_of_input_letters].lower()
-        else:
-            debug(f"waiting for user input", "scroll")
-            user_input = input()[0:max_number_of_input_letters].lower()
-            debug(f"\n","CYAN_no_z_string")
+        # if not self.should_get_user_input:
+            # user_input = "w"[0:max_number_of_input_letters].lower()
+        # else:
+
+        debug(f"waiting for user input", "scroll")
+
+        # user_input = input()[0:max_number_of_input_letters].lower()
+        user_input = self.user_input.get_user_input()
+
+        # debug(f"\n","CYAN_no_z_string")
+        print(f"recieved user input: {user_input}")
         cleaned_user_input = ascii(normalize("NFC", user_input)).replace("\\xa0", " ")[1:-1]
 
         # convert input to z_characters

@@ -1,6 +1,7 @@
 # main.py
 
 import threading
+from time import sleep
 from hex_extractor import HexExtractor
 from file_exporter import FileExporter
 from abreviator import Abreviator
@@ -12,34 +13,46 @@ from object_loader import ObjectLoader
 from dictionary import Dictionary
 from GUI import GUI
 from debuger import Debug
-import queue 
+from user_input import UserInput
+import queue
 
 import argparse
 
 should_ask_before_closing_window = False
+user_input_filename = "user_inputs.txt"
 
 def main():
-    q = queue.Queue()
+    instruction_output_queue = queue.Queue()
+    user_input_queue = queue.Queue()
+    user_input_queue.put(get_user_input_from_file(user_input_filename))
     gui = GUI()
-    main_loop_thread = threading.Thread(target=main_loop, args=(q, ))
+    main_loop_thread = threading.Thread(target=main_loop, args=(instruction_output_queue, user_input_queue,))
     # main_loop_thread = threading.Thread(target=test_main_loop, args=(q, ))
-    gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(q, should_ask_before_closing_window, ))
-    main_loop_thread.start()
+    gui_loop_thread = threading.Thread(target=gui.init_GUI, args=(instruction_output_queue, user_input_queue, should_ask_before_closing_window, ))
     gui_loop_thread.start()
+    main_loop_thread.start()
+    main_loop_thread.join()
+    # sleep(30)
 
-# def test_main_loop(gui_text_queue=None):
-#     if gui_text_queue != None:
-#         debugger = Debug(gui_text_queue)
-#         obj = Object(77)
-#     else:
-#         print("gui_text_queue was Null, not passed to debugger")
+def get_user_input_from_file(file_path):
+    with open(file_path, 'r+') as file:
+        return file.readlines()
 
-def main_loop(gui_text_queue=None):
+
+def main_loop(instruction_output_queue=None, user_input_queue=None):
     max_time_step = -1
-    if gui_text_queue != None:
-        debugger = Debug(gui_text_queue)
+    user_input = None
+
+    if instruction_output_queue != None:
+        debugger = Debug(instruction_output_queue)
     else:
-        print("gui_text_queue was NULL, not passed to debugger")
+        print("instruction_output_queue was NULL, not passed to debugger")
+
+    if user_input_queue != None:
+        user_input = UserInput(user_input_queue)
+    else:
+        print("user_input_queue was NULL, not passed to UserInput")
+    
     #input parsing
     parser = argparse.ArgumentParser(description="Process input file with optional abbreviations table.")
     parser.add_argument("-a", "--abbreviations", action="store_true", help="Output abbreviations table")
@@ -73,8 +86,8 @@ def main_loop(gui_text_queue=None):
     abreviator.load_abreivations(extractor, header)
     dictionary = Dictionary(header, extractor)
     objectLoader = ObjectLoader(extractor, header)
-    # print()
-    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator, dictionary)
+
+    routine_interpreter = RoutineInterpreter(extractor, header, max_time_step, objectLoader, abreviator, dictionary, user_input)
 
     # extractor.load_abreviator(abreviator.abreviations_table)
 
@@ -89,8 +102,22 @@ def main_loop(gui_text_queue=None):
     # Display header data
     # header.output_header_info()
 
+    print("===========start of Threading list=======")
+    for thread in threading.enumerate():
+        # if thread.daemon or thread is threading.current_thread():
+        #     continue
+        print(thread)
+        # thread.join()
+    print("===========end of Threading list=======")
+    
     # Tell Interpreter to get first routine
     routine_interpreter.start_interpreting()
+
+    print("end of mainloop")
+
+    # recursive_routine_thread = threading.Thread(target=routine_interpreter.start_interpreting)
+    # recursive_routine_thread.start()
+    
 
 
 if __name__ == "__main__":
